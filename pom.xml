@@ -20,7 +20,7 @@
 	</parent>
 
 	<modules>
-		<module>thallo-starter</module>
+		<module>thallo-starter-core</module>
 		<!--
 		<module>thallo-starter-cdc</module>
 		<module>thallo-starter-parent</module>
