@@ -8,11 +8,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LogIt {
+	ELogMode value() default ELogMode.All;
+
 	boolean logParams() default true;
 
 	boolean logResult() default true;
 
-	boolean logException() default true;
-
-	StackTraceLogType stacktrace() default StackTraceLogType.Filtered;
+	EStackTraceLogType stacktrace() default EStackTraceLogType.Filtered;
 }

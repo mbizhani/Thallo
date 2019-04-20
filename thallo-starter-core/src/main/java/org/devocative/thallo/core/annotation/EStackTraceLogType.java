@@ -1,5 +1,5 @@
 package org.devocative.thallo.core.annotation;
 
-public enum StackTraceLogType {
+public enum EStackTraceLogType {
 	None, Filtered, All
 }

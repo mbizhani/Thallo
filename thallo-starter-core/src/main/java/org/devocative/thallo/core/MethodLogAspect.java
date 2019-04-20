@@ -4,8 +4,9 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.devocative.thallo.core.annotation.ELogMode;
+import org.devocative.thallo.core.annotation.EStackTraceLogType;
 import org.devocative.thallo.core.annotation.LogIt;
-import org.devocative.thallo.core.annotation.StackTraceLogType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,18 +20,17 @@ public class MethodLogAspect {
 	// ------------------------------
 
 	public MethodLogAspect() {
-		log.info("* Thallo MethodLogAspect InitiatedInitiated");
+		log.info("* Thallo MethodLogAspect Initiated");
 	}
 
 	// ------------------------------
 
-	@Around("@within(org.devocative.thallo.core.annotation.LogIt) || @annotation(org.devocative.thallo.core.annotation.LogIt) || false")
+	@Around("@within(org.devocative.thallo.core.annotation.LogIt) || @annotation(org.devocative.thallo.core.annotation.LogIt)")
 	public Object around(ProceedingJoinPoint jp) throws Throwable {
-		Object[] args = jp.getArgs();
-
 		Object result = null;
 		Throwable error = null;
 		final long start = System.currentTimeMillis();
+
 		try {
 
 			result = jp.proceed();
@@ -47,47 +47,49 @@ public class MethodLogAspect {
 			final Method method = sig.getMethod();
 			final Class<?> declaringType = sig.getDeclaringType();
 
-			final LogIt logIt = method.isAnnotationPresent(LogIt.class) ?
-				method.getAnnotation(LogIt.class) :
-				declaringType.getAnnotation(LogIt.class);
+			final LogItWrapper wrapper = new LogItWrapper(
+				method.isAnnotationPresent(LogIt.class) ?
+					method.getAnnotation(LogIt.class) :
+					declaringType.getAnnotation(LogIt.class));
 
-			final LogItWrapper wrapper = new LogItWrapper(logIt);
+			if (wrapper.value() != ELogMode.Disabled) {
+				StringBuilder builder = new StringBuilder();
+				builder.append(String.format("LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
 
-			StringBuilder builder = new StringBuilder();
-			builder.append(String.format("LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
-
-			if (args.length > 0) {
-				builder.append(", args: ").append(wrapper.logParams() ? Arrays.toString(args) : "[***]");
-			}
-
-			if (error == null && !method.getReturnType().equals(Void.TYPE)) {
-				builder.append(", result: \"").append(wrapper.logResult() ? result : "***").append("\"");
-			}
-
-			builder.append(", dur: ").append(dur);
-
-			if (error != null && wrapper.logException()) {
-				builder.append(", err: \"").append(error).append("\"}");
-
-				switch (wrapper.stacktrace()) {
-					case None:
-						log.error(builder.toString());
-						break;
-
-					case Filtered:
-						builder
-							.append("\n")
-							.append(new StackTraceProcessor(error, declaringType).process());
-						log.error(builder.toString());
-						break;
-
-					case All:
-						log.error(builder.toString(), error);
-						break;
+				final Object[] args = jp.getArgs();
+				if (args.length > 0) {
+					builder.append(", args: ").append(wrapper.logParams() ? Arrays.toString(args) : "[***]");
 				}
-			} else {
-				builder.append("}");
-				log.info(builder.toString());
+
+				if (error == null && !method.getReturnType().equals(Void.TYPE)) {
+					builder.append(", result: \"").append(wrapper.logResult() ? result : "***").append("\"");
+				}
+
+				builder.append(", dur: ").append(dur);
+
+				if (error != null && wrapper.value() == ELogMode.All) {
+					builder.append(", err: \"").append(error).append("\"}");
+
+					switch (wrapper.stacktrace()) {
+						case None:
+							log.error(builder.toString());
+							break;
+
+						case Filtered:
+							builder
+								.append("\n")
+								.append(new StackTraceProcessor(error, declaringType).process());
+							log.error(builder.toString());
+							break;
+
+						case All:
+							log.error(builder.toString(), error);
+							break;
+					}
+				} else {
+					builder.append("}");
+					log.info(builder.toString());
+				}
 			}
 		}
 
@@ -111,12 +113,12 @@ public class MethodLogAspect {
 			return logIt == null || logIt.logResult();
 		}
 
-		boolean logException() {
-			return logIt == null || logIt.logException();
+		ELogMode value() {
+			return logIt != null ? logIt.value() : ELogMode.All;
 		}
 
-		StackTraceLogType stacktrace() {
-			return logIt != null ? logIt.stacktrace() : StackTraceLogType.Filtered;
+		EStackTraceLogType stacktrace() {
+			return logIt != null ? logIt.stacktrace() : EStackTraceLogType.Filtered;
 		}
 	}
 }
