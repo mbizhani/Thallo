@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LogIt {
-	ELogMode value() default ELogMode.All;
+	ELogMode mode() default ELogMode.All;
 
 	boolean logParams() default true;
 

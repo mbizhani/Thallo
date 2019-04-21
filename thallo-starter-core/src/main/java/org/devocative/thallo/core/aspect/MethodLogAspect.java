@@ -1,9 +1,10 @@
-package org.devocative.thallo.core;
+package org.devocative.thallo.core.aspect;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.devocative.thallo.core.StackTraceProcessor;
 import org.devocative.thallo.core.annotation.ELogMode;
 import org.devocative.thallo.core.annotation.ELogPlace;
 import org.devocative.thallo.core.annotation.EStackTraceLogType;
@@ -20,7 +21,11 @@ public class MethodLogAspect {
 
 	// ------------------------------
 
-	public MethodLogAspect() {
+	private final MethodLogConfiguration configuration;
+
+	public MethodLogAspect(MethodLogConfiguration configuration) {
+		this.configuration = configuration;
+
 		log.info("* Thallo MethodLogAspect Initiated");
 	}
 
@@ -40,7 +45,7 @@ public class MethodLogAspect {
 
 		final Object[] args = jp.getArgs();
 
-		if (wrapper.value() != ELogMode.Disabled && wrapper.place() != ELogPlace.End) {
+		if (wrapper.mode() != ELogMode.Disabled && wrapper.place() != ELogPlace.End) {
 			StringBuilder builder = new StringBuilder();
 			builder.append(String.format("{LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
 			if (args.length > 0) {
@@ -66,7 +71,7 @@ public class MethodLogAspect {
 		} finally {
 			final long dur = System.currentTimeMillis() - start;
 
-			if (wrapper.value() != ELogMode.Disabled && wrapper.place() != ELogPlace.Start) {
+			if (wrapper.mode() != ELogMode.Disabled && wrapper.place() != ELogPlace.Start) {
 				StringBuilder builder = new StringBuilder();
 				builder.append(String.format("}LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
 
@@ -80,7 +85,7 @@ public class MethodLogAspect {
 
 				builder.append(", dur: ").append(dur);
 
-				if (error != null && wrapper.value() == ELogMode.All) {
+				if (error != null && wrapper.mode() == ELogMode.All) {
 					builder.append(", err: \"").append(error).append("\"}");
 
 					switch (wrapper.stacktrace()) {
@@ -122,24 +127,29 @@ public class MethodLogAspect {
 
 		// ---------------
 
-		ELogMode value() {
-			return logIt != null ? logIt.value() : ELogMode.All;
+		ELogMode mode() {
+			return configuration.getMode() != null ? configuration.getMode() :
+				logIt != null ? logIt.mode() : ELogMode.All;
 		}
 
 		boolean logParams() {
-			return logIt == null || logIt.logParams();
+			return configuration.getLogParams() != null ? configuration.getLogParams() :
+				logIt == null || logIt.logParams();
 		}
 
 		boolean logResult() {
-			return logIt == null || logIt.logResult();
+			return configuration.getLogResult() != null ? configuration.getLogResult() :
+				logIt == null || logIt.logResult();
 		}
 
 		EStackTraceLogType stacktrace() {
-			return logIt != null ? logIt.stacktrace() : EStackTraceLogType.Filtered;
+			return configuration.getStacktrace() != null ? configuration.getStacktrace() :
+				logIt != null ? logIt.stacktrace() : EStackTraceLogType.Filtered;
 		}
 
 		ELogPlace place() {
-			return logIt != null ? logIt.place() : ELogPlace.End;
+			return configuration.getPlace() != null ? configuration.getPlace() :
+				logIt != null ? logIt.place() : ELogPlace.End;
 		}
 	}
 }

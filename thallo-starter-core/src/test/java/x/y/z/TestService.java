@@ -25,19 +25,19 @@ public class TestService implements ITestService {
 		return div(no);
 	}
 
-	@LogIt(ELogMode.Disabled)
+	@LogIt(mode = ELogMode.Disabled)
 	@Override
 	public String ignored(List<Integer> list) {
 		return String.valueOf(list);
 	}
 
-	@LogIt(logParams = false, logResult = false)
+	@LogIt(mode = ELogMode.Info, logParams = false, logResult = false)
 	@Override
 	public Boolean auth(String password) {
 		return true;
 	}
 
-	@LogIt(value = ELogMode.Info, place = ELogPlace.Both)
+	@LogIt(mode = ELogMode.Info, place = ELogPlace.Both)
 	@Override
 	public double ignoreError(int no) {
 		return throwsError(no);

@@ -74,17 +74,21 @@ public class TestLogIt {
 			testService.ignoreError(13);
 			fail();
 		} catch (Exception e) {
+			/*
+			Note: ignoreError() has annotated with "place = ELogPlace.Both", however config file overrides it!
+
 			final ILoggingEvent event5 = appender.list.get(4);
 			assertEquals(Level.INFO, event5.getLevel());
 			assertEquals("{LogIt - {sig: \"TestService.ignoreError\", args: [13]}", event5.getMessage());
+			*/
 
-			final ILoggingEvent event6 = appender.list.get(5);
-			assertEquals(Level.INFO, event6.getLevel());
-			assertTrue(event6.getMessage().startsWith("}LogIt - {sig: \"TestService.ignoreError\", args: [13], dur:"));
-			assertTrue(event6.getMessage().endsWith("}"));
+			final ILoggingEvent event5 = appender.list.get(4);
+			assertEquals(Level.INFO, event5.getLevel());
+			assertTrue(event5.getMessage().startsWith("}LogIt - {sig: \"TestService.ignoreError\", args: [13], dur:"));
+			assertTrue(event5.getMessage().endsWith("}"));
 		}
 
 
-		assertEquals(6, appender.list.size());
+		assertEquals(5, appender.list.size());
 	}
 }
