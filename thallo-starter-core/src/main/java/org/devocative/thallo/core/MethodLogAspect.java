@@ -5,6 +5,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.devocative.thallo.core.annotation.ELogMode;
+import org.devocative.thallo.core.annotation.ELogPlace;
 import org.devocative.thallo.core.annotation.EStackTraceLogType;
 import org.devocative.thallo.core.annotation.LogIt;
 import org.slf4j.Logger;
@@ -27,6 +28,29 @@ public class MethodLogAspect {
 
 	@Around("@within(org.devocative.thallo.core.annotation.LogIt) || @annotation(org.devocative.thallo.core.annotation.LogIt)")
 	public Object around(ProceedingJoinPoint jp) throws Throwable {
+		// Help: https://stackoverflow.com/questions/5714411/getting-the-java-lang-reflect-method-from-a-proceedingjoinpoint
+		final MethodSignature sig = (MethodSignature) jp.getSignature();
+		final Method method = sig.getMethod();
+		final Class<?> declaringType = sig.getDeclaringType();
+
+		final LogItWrapper wrapper = new LogItWrapper(
+			method.isAnnotationPresent(LogIt.class) ?
+				method.getAnnotation(LogIt.class) :
+				declaringType.getAnnotation(LogIt.class));
+
+		final Object[] args = jp.getArgs();
+
+		if (wrapper.value() != ELogMode.Disabled && wrapper.place() != ELogPlace.End) {
+			StringBuilder builder = new StringBuilder();
+			builder.append(String.format("{LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
+			if (args.length > 0) {
+				builder.append(", args: ").append(wrapper.logParams() ? Arrays.toString(args) : "[***]");
+			}
+			builder.append("}");
+
+			log.info(builder.toString());
+		}
+
 		Object result = null;
 		Throwable error = null;
 		final long start = System.currentTimeMillis();
@@ -42,21 +66,10 @@ public class MethodLogAspect {
 		} finally {
 			final long dur = System.currentTimeMillis() - start;
 
-			// Help: https://stackoverflow.com/questions/5714411/getting-the-java-lang-reflect-method-from-a-proceedingjoinpoint
-			final MethodSignature sig = (MethodSignature) jp.getSignature();
-			final Method method = sig.getMethod();
-			final Class<?> declaringType = sig.getDeclaringType();
-
-			final LogItWrapper wrapper = new LogItWrapper(
-				method.isAnnotationPresent(LogIt.class) ?
-					method.getAnnotation(LogIt.class) :
-					declaringType.getAnnotation(LogIt.class));
-
-			if (wrapper.value() != ELogMode.Disabled) {
+			if (wrapper.value() != ELogMode.Disabled && wrapper.place() != ELogPlace.Start) {
 				StringBuilder builder = new StringBuilder();
-				builder.append(String.format("LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
+				builder.append(String.format("}LogIt - {sig: \"%s.%s\"", declaringType.getSimpleName(), sig.getName()));
 
-				final Object[] args = jp.getArgs();
 				if (args.length > 0) {
 					builder.append(", args: ").append(wrapper.logParams() ? Arrays.toString(args) : "[***]");
 				}
@@ -101,8 +114,16 @@ public class MethodLogAspect {
 	private class LogItWrapper {
 		private final LogIt logIt;
 
+		// ---------------
+
 		LogItWrapper(LogIt logIt) {
 			this.logIt = logIt;
+		}
+
+		// ---------------
+
+		ELogMode value() {
+			return logIt != null ? logIt.value() : ELogMode.All;
 		}
 
 		boolean logParams() {
@@ -113,12 +134,12 @@ public class MethodLogAspect {
 			return logIt == null || logIt.logResult();
 		}
 
-		ELogMode value() {
-			return logIt != null ? logIt.value() : ELogMode.All;
-		}
-
 		EStackTraceLogType stacktrace() {
 			return logIt != null ? logIt.stacktrace() : EStackTraceLogType.Filtered;
+		}
+
+		ELogPlace place() {
+			return logIt != null ? logIt.place() : ELogPlace.End;
 		}
 	}
 }

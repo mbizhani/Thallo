@@ -1,6 +1,7 @@
 package x.y.z;
 
 import org.devocative.thallo.core.annotation.ELogMode;
+import org.devocative.thallo.core.annotation.ELogPlace;
 import org.devocative.thallo.core.annotation.LogIt;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,7 @@ public class TestService implements ITestService {
 		return true;
 	}
 
-	@LogIt(ELogMode.Info)
+	@LogIt(value = ELogMode.Info, place = ELogPlace.Both)
 	@Override
 	public double ignoreError(int no) {
 		return throwsError(no);

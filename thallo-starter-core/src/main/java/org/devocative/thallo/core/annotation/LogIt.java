@@ -15,4 +15,6 @@ public @interface LogIt {
 	boolean logResult() default true;
 
 	EStackTraceLogType stacktrace() default EStackTraceLogType.Filtered;
+
+	ELogPlace place() default ELogPlace.End;
 }
