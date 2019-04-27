@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: TestCDC
+  jpa:
+    show-sql: true
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    consumer:
+      # Following line is necessary for test only!
+      auto-offset-reset: earliest
+      group-id: ${spring.application.name}
+
+devocative:
+  thallo:
+    cdc:
+      receive:
+        mapped-classes:
+          org.devocative.thallo.cdc.test.model.Book: org.devocative.thallo.cdc.test.model.VBook

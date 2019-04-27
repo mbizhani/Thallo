@@ -1,0 +1,12 @@
+<!--
+Help: https://thoughts-on-java.org/hibernate-tips-how-to-activate-an-entity-listener-for-all-entities/
+-->
+<entity-mappings>
+	<persistence-unit-metadata>
+		<persistence-unit-defaults>
+			<entity-listeners>
+				<entity-listener class="org.devocative.thallo.cdc.CdcSourceEntityListener"/>
+			</entity-listeners>
+		</persistence-unit-defaults>
+	</persistence-unit-metadata>
+</entity-mappings>

@@ -20,8 +20,11 @@
 
 	<modules>
 		<module>thallo-starter-core</module>
+
+		<module>thallo-cdc</module>
+		<module>thallo-starter-cdc-jpa</module>
+
 		<!--
-		<module>thallo-starter-cdc</module>
 		<module>thallo-starter-parent</module>
 		-->
 	</modules>
@@ -32,17 +35,6 @@
 	</properties>
 
 	<dependencies>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-		</dependency>
-
 
 		<!-- Test -->
 
