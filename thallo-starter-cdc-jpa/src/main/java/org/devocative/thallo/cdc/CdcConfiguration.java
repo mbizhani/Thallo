@@ -11,8 +11,8 @@ import java.util.Map;
 public class CdcConfiguration {
 
 	private boolean enabled = true;
-	private String topic = "cdc-topic";
-	private String errorTopic = "cdc-topic-error";
+	private String topic = "thallo-cdc-topic";
+	//private String errorTopic = "thallo-cdc-topic-error";
 	private SendEnd send = new SendEnd();
 	private ReceiveEnd receive = new ReceiveEnd();
 
@@ -34,13 +34,13 @@ public class CdcConfiguration {
 		this.topic = topic;
 	}
 
-	public String getErrorTopic() {
+	/*public String getErrorTopic() {
 		return errorTopic;
 	}
 
 	public void setErrorTopic(String errorTopic) {
 		this.errorTopic = errorTopic;
-	}
+	}*/
 
 	public SendEnd getSend() {
 		return send;

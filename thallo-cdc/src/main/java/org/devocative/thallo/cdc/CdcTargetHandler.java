@@ -12,4 +12,7 @@ public interface CdcTargetHandler<T> {
 	default boolean beforeDelete(T target) {
 		return true;
 	}
+
+	class DefaultHandler implements CdcTargetHandler {
+	}
 }

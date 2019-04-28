@@ -16,5 +16,5 @@ public @interface CdcTarget {
 
 	boolean delete() default true;
 
-	Class<? extends CdcTargetHandler> handler() default CdcTargetHandler.class;
+	Class<? extends CdcTargetHandler> handler() default CdcTargetHandler.DefaultHandler.class;
 }

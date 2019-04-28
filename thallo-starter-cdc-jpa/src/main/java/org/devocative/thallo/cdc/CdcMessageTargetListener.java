@@ -99,7 +99,7 @@ public class CdcMessageTargetListener {
 			throw new CdcException("Invalid CdcMessage: " + rawMessage);
 		}
 
-		final Optional<Class<?>> targetClassOptional = findTargetClass(key);
+		final Optional<Class<?>> targetClassOptional = findTargetClass(key, message.getSender());
 		targetClassOptional.ifPresent(targetClass -> {
 			log.info("OnCdcMessage: key=[{}] message={}", key, message);
 
@@ -151,24 +151,27 @@ public class CdcMessageTargetListener {
 
 	// ------------------------------
 
-	private Optional<Class<?>> findTargetClass(String key) {
+	private Optional<Class<?>> findTargetClass(String key, String sender) {
 		if (!mappedClasses.containsKey(key)) {
 			if (configuration.getReceive().getMappedClasses().isEmpty()) {
 				try {
 					final Class<?> cls = Class.forName(key);
-					if (cls.isAnnotationPresent(CdcTarget.class)) {
+					if (appName.equals(sender)) {
+						log.info("CdcMessageTargetListener, ignored class as self-sender: {}", key);
+						mappedClasses.put(key, Optional.empty());
+					} else if (cls.isAnnotationPresent(CdcTarget.class)) {
 						final Optional<Class<?>> targetClass = Optional.of(cls);
 						mappedClasses.put(key, targetClass);
 					} else {
-						log.error("Cdc Target Class with @CdcTarget: " + key);
+						log.info("CdcMessageTargetListener, found class without @CdcTarget: {}", key);
 						mappedClasses.put(key, Optional.empty());
 					}
 				} catch (Exception e) {
-					log.info("CdcMessageTargetListener, Class ignored: {}", key);
+					log.info("CdcMessageTargetListener, class not found: {}", key);
 					mappedClasses.put(key, Optional.empty());
 				}
 			} else {
-				log.info("CdcMessageTargetListener, Class not in map: {}", key);
+				log.info("CdcMessageTargetListener, class not in mapping: {}", key);
 				mappedClasses.put(key, Optional.empty());
 			}
 		}
