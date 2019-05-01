@@ -16,3 +16,4 @@ devocative:
       receive:
         mapped-classes:
           org.devocative.thallo.cdc.test.model.Book: org.devocative.thallo.cdc.test.model.VBook
+          org.devocative.thallo.cdc.test.model.Person: org.devocative.thallo.cdc.test.model.VPerson
