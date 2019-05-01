@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@LogIt
 @Service
 public class TestService implements ITestService {
 

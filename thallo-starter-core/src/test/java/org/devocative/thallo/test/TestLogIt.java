@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import org.devocative.thallo.core.aspect.MethodLogProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 import x.y.z.ITestService;
 
 import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
@@ -23,14 +29,19 @@ public class TestLogIt {
 	@Autowired
 	private ITestService testService;
 
+	@Autowired
+	private MethodLogProperties properties;
+
 	// ------------------------------
 
 	@Test
 	public void testAll() {
+		assertTrue(properties.getService().getEnabled());
+
 		ListAppender<ILoggingEvent> appender = new ListAppender<>();
 		appender.start();
 
-		final Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+		final Logger root = (Logger) LoggerFactory.getLogger("org.devocative.thallo");
 		root.addAppender(appender);
 
 
@@ -90,5 +101,18 @@ public class TestLogIt {
 
 
 		assertEquals(5, appender.list.size());
+	}
+
+	@Test
+	public void testInThreads() throws Exception {
+		final ExecutorService executorService = Executors.newFixedThreadPool(20);
+		executorService.invokeAll(IntStream
+			.range(1, 40)
+			.mapToObj(i -> (Callable<Void>) () -> {
+				testAll();
+				return null;
+			})
+			.collect(Collectors.toList())
+		);
 	}
 }

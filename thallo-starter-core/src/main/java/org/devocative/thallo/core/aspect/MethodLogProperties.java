@@ -6,7 +6,7 @@ import org.devocative.thallo.core.annotation.EStackTraceLogType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "devocative.thallo.log")
-public class MethodLogConfiguration {
+public class MethodLogProperties {
 	private ELogMode mode;
 
 	private Boolean logParams;
@@ -16,6 +16,8 @@ public class MethodLogConfiguration {
 	private EStackTraceLogType stacktrace;
 
 	private ELogPlace place;
+
+	private ServiceAnnotationProperties service = new ServiceAnnotationProperties();
 
 	// ------------------------------
 
@@ -59,4 +61,25 @@ public class MethodLogConfiguration {
 		this.place = place;
 	}
 
+	public ServiceAnnotationProperties getService() {
+		return service;
+	}
+
+	public void setService(ServiceAnnotationProperties service) {
+		this.service = service;
+	}
+
+	// ------------------------------
+
+	public static class ServiceAnnotationProperties {
+		private Boolean enabled = true;
+
+		public Boolean getEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(Boolean enabled) {
+			this.enabled = enabled;
+		}
+	}
 }

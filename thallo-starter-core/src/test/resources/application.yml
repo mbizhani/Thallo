@@ -2,3 +2,13 @@ devocative:
   thallo:
     log:
       place: end
+
+---
+
+spring:
+  profiles: no-service
+devocative:
+  thallo:
+    log:
+      service:
+        enabled: false

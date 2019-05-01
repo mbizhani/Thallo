@@ -11,6 +11,7 @@ import org.devocative.thallo.core.annotation.EStackTraceLogType;
 import org.devocative.thallo.core.annotation.LogIt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -21,22 +22,31 @@ public class MethodLogAspect {
 
 	// ------------------------------
 
-	private final MethodLogConfiguration configuration;
+	private final MethodLogProperties properties;
 
-	public MethodLogAspect(MethodLogConfiguration configuration) {
-		this.configuration = configuration;
+	public MethodLogAspect(MethodLogProperties properties) {
+		this.properties = properties;
 
 		log.info("* Thallo MethodLogAspect Initiated");
 	}
 
 	// ------------------------------
 
-	@Around("@within(org.devocative.thallo.core.annotation.LogIt) || @annotation(org.devocative.thallo.core.annotation.LogIt)")
+	@Around("@within(org.springframework.stereotype.Service) || @within(org.devocative.thallo.core.annotation.LogIt) || @annotation(org.devocative.thallo.core.annotation.LogIt)")
 	public Object around(ProceedingJoinPoint jp) throws Throwable {
+		long sum = 0;
+		long bm = System.currentTimeMillis();
+
+
 		// Help: https://stackoverflow.com/questions/5714411/getting-the-java-lang-reflect-method-from-a-proceedingjoinpoint
 		final MethodSignature sig = (MethodSignature) jp.getSignature();
 		final Method method = sig.getMethod();
 		final Class<?> declaringType = sig.getDeclaringType();
+
+		if (!properties.getService().getEnabled() && declaringType.isAnnotationPresent(Service.class) &&
+			!declaringType.isAnnotationPresent(LogIt.class) && !method.isAnnotationPresent(LogIt.class)) {
+			return jp.proceed();
+		}
 
 		final LogItWrapper wrapper = new LogItWrapper(
 			method.isAnnotationPresent(LogIt.class) ?
@@ -59,6 +69,9 @@ public class MethodLogAspect {
 		Object result = null;
 		Throwable error = null;
 		final long start = System.currentTimeMillis();
+
+		sum += System.currentTimeMillis() - bm;
+		bm = System.currentTimeMillis();
 
 		try {
 
@@ -111,6 +124,9 @@ public class MethodLogAspect {
 			}
 		}
 
+		sum += System.currentTimeMillis() - bm;
+		System.out.println("############# sum = " + sum);
+
 		return result;
 	}
 
@@ -128,27 +144,27 @@ public class MethodLogAspect {
 		// ---------------
 
 		ELogMode mode() {
-			return configuration.getMode() != null ? configuration.getMode() :
+			return properties.getMode() != null ? properties.getMode() :
 				logIt != null ? logIt.mode() : ELogMode.All;
 		}
 
 		boolean logParams() {
-			return configuration.getLogParams() != null ? configuration.getLogParams() :
+			return properties.getLogParams() != null ? properties.getLogParams() :
 				logIt == null || logIt.logParams();
 		}
 
 		boolean logResult() {
-			return configuration.getLogResult() != null ? configuration.getLogResult() :
+			return properties.getLogResult() != null ? properties.getLogResult() :
 				logIt == null || logIt.logResult();
 		}
 
 		EStackTraceLogType stacktrace() {
-			return configuration.getStacktrace() != null ? configuration.getStacktrace() :
+			return properties.getStacktrace() != null ? properties.getStacktrace() :
 				logIt != null ? logIt.stacktrace() : EStackTraceLogType.Filtered;
 		}
 
 		ELogPlace place() {
-			return configuration.getPlace() != null ? configuration.getPlace() :
+			return properties.getPlace() != null ? properties.getPlace() :
 				logIt != null ? logIt.place() : ELogPlace.End;
 		}
 	}
