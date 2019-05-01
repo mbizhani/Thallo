@@ -19,7 +19,7 @@
 	</parent>
 
 	<modules>
-		<module>thallo-starter-core</module>
+		<module>thallo-starter-alog</module>
 
 		<module>thallo-cdc</module>
 		<module>thallo-starter-cdc-jpa</module>
