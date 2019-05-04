@@ -57,6 +57,7 @@ public class TestCDC {
 		Book book1 = new Book();
 		book1.setId(1L);
 		book1.setName("B1");
+		book1.setTitle(new LangString("Book1"));
 		book1.setPrice(new Price(new BigDecimal("100000.1"), "ASD"));
 		book1.setSize(EBookSize.Normal);
 		book1.setOwner(owner);
@@ -87,6 +88,7 @@ public class TestCDC {
 		{
 			final VBook vBook1 = vBookRepository.findById(1L).orElseThrow(RuntimeException::new);
 			assertEquals("t - B1", vBook1.getName()); // CdcHandler
+			assertEquals("Book1", vBook1.getTitle().getEn());
 			assertEquals(0, new BigDecimal("100000.1").compareTo(vBook1.getPrice().getAmount()));
 			assertEquals("ASD", vBook1.getPrice().getCurrency());
 			assertEquals(0, vBook1.getVersion().intValue());

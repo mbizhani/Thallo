@@ -16,6 +16,8 @@ public class VBook {
 	@Column(nullable = false)
 	private String name;
 
+	private LangString title;
+
 //	@Column(nullable = false)
 //	private String publisher;
 
@@ -39,6 +41,14 @@ public class VBook {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public LangString getTitle() {
+		return title;
+	}
+
+	public void setTitle(LangString title) {
+		this.title = title;
 	}
 
 	public Price getPrice() {
