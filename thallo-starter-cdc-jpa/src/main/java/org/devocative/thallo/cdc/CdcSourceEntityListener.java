@@ -9,12 +9,14 @@ import org.devocative.thallo.cdc.message.EAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import javax.persistence.PostPersist;
 import javax.persistence.PostRemove;
 import javax.persistence.PostUpdate;
 
+@Configuration
 public class CdcSourceEntityListener {
 	private static final Logger log = LoggerFactory.getLogger(CdcSourceEntityListener.class);
 

@@ -15,6 +15,7 @@ public class CdcConfiguration {
 	//private String errorTopic = "thallo-cdc-topic-error";
 	private SendEnd send = new SendEnd();
 	private ReceiveEnd receive = new ReceiveEnd();
+	private HibernateListener hibernateListener = new HibernateListener();
 
 	// ------------------------------
 
@@ -56,6 +57,14 @@ public class CdcConfiguration {
 
 	public void setReceive(ReceiveEnd receive) {
 		this.receive = receive;
+	}
+
+	public HibernateListener getHibernateListener() {
+		return hibernateListener;
+	}
+
+	public void setHibernateListener(HibernateListener hibernateListener) {
+		this.hibernateListener = hibernateListener;
 	}
 
 	// ------------------------------
@@ -102,6 +111,18 @@ public class CdcConfiguration {
 
 		public void setMappedClasses(Map<String, String> mappedClasses) {
 			this.mappedClasses = mappedClasses;
+		}
+	}
+
+	public static class HibernateListener {
+		private Boolean enabled = true;
+
+		public Boolean getEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(Boolean enabled) {
+			this.enabled = enabled;
 		}
 	}
 }
