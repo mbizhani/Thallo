@@ -1,7 +1,7 @@
 package org.devocative.thallo.cdc.test.model;
 
+import org.devocative.thallo.cdc.annotation.CdcData;
 import org.devocative.thallo.cdc.annotation.CdcSource;
-import org.devocative.thallo.cdc.annotation.CdcSourceData;
 
 import javax.persistence.*;
 import java.util.List;
@@ -12,21 +12,24 @@ public class Book extends Auditable {
 	@Id
 	private Long id;
 
+	@CdcData
 	private String name;
 
+	@CdcData
 	private LangString title;
 
 	private String publisher;
 
+	@CdcData
 	private Price price;
 
+	@CdcData
 	private EBookSize size;
 
 	@ManyToOne
 	@JoinColumn(name = "f_owner")
 	private Person owner;
 
-	@CdcSourceData(false)
 	@ManyToMany
 	@JoinTable(name = "mt_books_author")
 	private List<Person> authors;

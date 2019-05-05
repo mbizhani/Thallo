@@ -1,5 +1,6 @@
 package org.devocative.thallo.cdc.test.model;
 
+import org.devocative.thallo.cdc.annotation.CdcData;
 import org.devocative.thallo.cdc.annotation.CdcSource;
 
 import javax.persistence.Entity;
@@ -13,6 +14,7 @@ public class Person {
 	@Id
 	private Long id;
 
+	@CdcData
 	private String name;
 
 	@OneToMany(mappedBy = "owner")

@@ -3,14 +3,14 @@ package org.devocative.thallo.cdc.test.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.devocative.thallo.cdc.annotation.CdcSource;
+import org.devocative.thallo.cdc.annotation.CdcData;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import java.io.IOException;
 import java.io.Serializable;
 
-@CdcSource
+@CdcData
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LangString implements Comparable<LangString>, Serializable {
 	private static final long serialVersionUID = -1159507817595820888L;

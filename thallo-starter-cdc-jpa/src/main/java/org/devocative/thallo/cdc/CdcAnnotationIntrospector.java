@@ -4,10 +4,11 @@ import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import org.devocative.thallo.cdc.annotation.CdcSource;
-import org.devocative.thallo.cdc.annotation.CdcSourceData;
+import org.devocative.thallo.cdc.annotation.CdcData;
 
-import javax.persistence.*;
+import javax.persistence.Embeddable;
+import javax.persistence.Id;
+import javax.persistence.Version;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 
@@ -28,40 +29,24 @@ public class CdcAnnotationIntrospector extends JacksonAnnotationIntrospector {
 	// ------------------------------
 
 	private boolean doIt(Annotated a) {
-		CdcSource cdcSource = null;
-		CdcSourceData cdcSourceData = null;
-
-		Embeddable embeddableType = null;
-
+		CdcData cdcData = _findAnnotation(a, CdcData.class);
 		Id id = _findAnnotation(a, Id.class);
 		Version version = _findAnnotation(a, Version.class);
-		OneToMany oneToMany = _findAnnotation(a, OneToMany.class);
-		ManyToMany manyToMany = _findAnnotation(a, ManyToMany.class);
-		OneToOne oneToOne = _findAnnotation(a, OneToOne.class);
+
+		Embeddable embeddableType = null;
 
 		final AnnotatedElement element = a.getAnnotated();
 		if (element instanceof Field) {
 			Field field = (Field) element;
 			final Class<?> clsOwnerOfField = field.getDeclaringClass();
 
-			cdcSource = clsOwnerOfField.getAnnotation(CdcSource.class);
-			cdcSourceData = clsOwnerOfField.getAnnotation(CdcSourceData.class);
-
-			if (cdcSource != null && cdcSourceData != null && !cdcSourceData.value()) {
-				throw new CdcException("Invalid Entity for CDC: @CdcSource and @CdcSourceData(false) over " + clsOwnerOfField.getName());
+			if (cdcData == null) {
+				cdcData = clsOwnerOfField.getAnnotation(CdcData.class);
 			}
-
 			embeddableType = clsOwnerOfField.getAnnotation(Embeddable.class);
 		}
 
-		if (a.hasAnnotation(CdcSourceData.class)) {
-			cdcSourceData = _findAnnotation(a, CdcSourceData.class);
-		}
-
-		return (cdcSourceData == null || cdcSourceData.value()) &&
-			(cdcSourceData != null || cdcSource != null || id != null || version != null || embeddableType != null) &&
-			(oneToMany == null || oneToMany.mappedBy() == null) &&
-			(manyToMany == null || manyToMany.mappedBy() == null) &&
-			(oneToOne == null || oneToOne.mappedBy() == null);
+		return (cdcData != null && cdcData.value()) ||
+			(cdcData == null && (id != null || version != null || embeddableType != null));
 	}
 }
