@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.devocative.thallo</groupId>
 		<artifactId>thallo-parent</artifactId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.1</version>
 	</parent>
 	<artifactId>thallo-starter-alog</artifactId>
 	<packaging>jar</packaging>
