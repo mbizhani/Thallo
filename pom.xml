@@ -24,6 +24,8 @@
 		<module>thallo-cdc</module>
 		<module>thallo-starter-cdc-jpa</module>
 
+		<module>thallo-itest</module>
+
 		<!--
 		<module>thallo-starter-parent</module>
 		-->

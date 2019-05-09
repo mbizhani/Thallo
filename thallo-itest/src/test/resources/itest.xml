@@ -1,0 +1,42 @@
+<itest>
+	<!--<bootApps>
+		<bootApp name="Kernel" fqn="ir.maxsa.kernel.KernelApplication" profile="h2" context="/kernel"/>
+	</bootApps>-->
+
+	<services>
+		<service name="Kernel" host="localhost" port="8080" context="/kernel"/>
+	</services>
+
+	<params>
+		<param name="ShopName" value="shop1"/>
+		<param name="MUsername" value="+989121234567"/>
+		<param name="MPassword" value="asd"/>
+	</params>
+
+	<rests>
+		<rest app="Kernel" uri="/api/auth/registrations" method="POST">
+			<body><![CDATA[
+{
+	"storeName": "${ShopName}",
+	"username": "${MUsername}",
+	"password": "${MPassword}"
+}
+]]></body>
+			<response status="OK">
+				<asserts>
+					<assert path="personId" type="STRING" hasValue="true" storeAsParam="PersonID"/>
+					<assert path="usernameType" type="STRING" value="Cell"/>
+				</asserts>
+			</response>
+		</rest>
+
+		<rest app="Kernel" uri="/api/auth/registrations/${PersonID}/1234" method="GET">
+			<response status="OK">
+				<asserts>
+					<assert path="access_token" type="STRING" storeAsParam="MerchantToken"/>
+					<assert path="token_type" type="STRING" value="bearer"/>
+				</asserts>
+			</response>
+		</rest>
+	</rests>
+</itest>
