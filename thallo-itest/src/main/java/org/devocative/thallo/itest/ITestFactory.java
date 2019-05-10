@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 import redis.embedded.RedisServer;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,10 +62,10 @@ public class ITestFactory {
 
 			if (!iTest.getBootApps().isEmpty()) {
 				iTest.getBootApps().forEach(this::startApp);
-			} else if (!iTest.getServices().isEmpty()) {
+			}
+
+			if (!iTest.getServices().isEmpty()) {
 				iTest.getServices().forEach(this::processService);
-			} else {
-				throw new RuntimeException("Invalid XML: no <bootApp/> or <service/>");
 			}
 
 			iTest.getParams().forEach(param ->
@@ -83,9 +84,8 @@ public class ITestFactory {
 				public void handleError(ClientHttpResponse clientHttpResponse) {
 				}
 			});
-			System.setProperty("spring.jackson.serialization.INDENT_OUTPUT", "true");
 
-			log.info("\n#########################\nI T E S T   F A C T O R Y\n#########################\n");
+			log.info("\n#########################\n T H A L L O   I T E S T \n#########################\n");
 
 			iTest.getRests().forEach(this::execute);
 		} finally {
@@ -103,29 +103,66 @@ public class ITestFactory {
 	// ------------------------------
 
 	private void execute(Rest rest) {
-		final AppInfo info = (AppInfo) CONTEXT.get(rest.getApp());
-		final String url = "http://" + info.host + ":" + info.port + info.context + processStringTemplate(rest.getUri());
-		final String rqBody = rest.getBody() != null ? processStringTemplate(rest.getBody()).trim() : "";
-		log.info("# R E S T #\n{} {}\n{}", rest.getMethod(), url, rqBody);
+		final String url;
+		if (rest.getUri() != null) {
+			final AppInfo info = (AppInfo) CONTEXT.get(rest.getApp());
+			if (info == null) {
+				throw new TestFailException(String.format("Invalid 'app' for rest [%s]: %s", rest.getUri(), rest.getApp()));
+			}
+			url = "http://" + info.host + ":" + info.port + info.context + processStringTemplate(rest.getUri());
+		} else if (rest.getUrl() != null) {
+			String pUrl = processStringTemplate(rest.getUrl());
+			url = pUrl.startsWith("http://") || pUrl.startsWith("https://") ? pUrl : "http://" + pUrl;
+		} else {
+			throw new TestFailException("Invalid rest without uri or url");
+		}
+
+		if (rest.getResponse() != null) {
+			processRq(url, rest, null);
+		} else if (!rest.getRequests().isEmpty()) {
+			rest.getRequests().forEach(request -> processRq(url, rest, request));
+		} else {
+			throw new TestFailException("Invalid XML: No <response/> nor <request/>");
+		}
+	}
+
+	private void processRq(String url, Rest rest, RestRequest request) {
+		final String rqBody;
+		if (request == null) {
+			rqBody = "";
+		} else {
+			rqBody = request.getBody() != null ? processStringTemplate(request.getBody()).trim() : "";
+		}
+		log.info("# R E S T   R E Q U E S T #\n{} {}\n{}", rest.getMethod(), url, rqBody);
 
 		final HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		if (rest.getBearerToken() != null) {
+			headers.setBearerAuth(processStringTemplate(rest.getBearerToken()));
+		}
 
 		final HttpEntity<?> entity = new HttpEntity<>(rqBody, headers);
 		ResponseEntity<String> exchange = template.exchange(url, rest.getMethod(), entity, String.class);
 		final HttpStatus rsStatus = exchange.getStatusCode();
 		final String rsBody = exchange.getBody();
-		log.info("# R E S T   R E S U L T#\nSTATUS: [{}]\n{}", rsStatus, prettyJson(rsBody));
+		log.info("# R E S T   R E S P O N S E #\nSTATUS: [{}]\n{}", rsStatus, prettyJson(rsBody));
 
-		final RestResponse response = rest.getResponse();
+		if (request == null && rest.getResponse() != null) {
+			processRs(rsStatus, rsBody, rest.getResponse());
+		} else if (request != null && request.getResponse() != null) {
+			processRs(rsStatus, rsBody, request.getResponse());
+		} else {
+			throw new TestFailException("Invalid XML of <response/> or <request/>");
+		}
+	}
+
+	private void processRs(HttpStatus rsStatus, String rsBody, RestResponse response) {
 		if (rsStatus == response.getStatus()) {
 			Map rs;
 			if (rsBody.startsWith("{")) {
 				rs = jsonAsMap(rsBody);
-				//System.out.println("###### map = " + rs);
 			} else if (rsBody.startsWith("[")) {
 				List list = jsonAsList(rsBody);
-				//System.out.println("###### list = " + list);
 				rs = new HashMap();
 				rs.put("list", list);
 			} else {
@@ -133,22 +170,57 @@ public class ITestFactory {
 			}
 
 			response.getAsserts().forEach(restAssert -> evalAssert(rs, restAssert));
-		} else {
+		} else if (!response.getIgnoreOthers()) {
 			throw new TestFailException("Invalid status code", response.getStatus(), rsStatus);
 		}
 	}
 
 	private void evalAssert(Map response, RestAssert anAssert) {
-		final Object val = evaluate(response, anAssert.getPath());
-		if (val != null) {
-			if (!anAssert.getType().getJavaType().isAssignableFrom(val.getClass())) {
-				throw new TestFailException(String.format("Invalid assert type for [%s]", anAssert.getPath()), anAssert.getType().getJavaType(), val.getClass());
+		Object rsValue = evaluate(response, anAssert.getPath());
+		if (rsValue != null) {
+			if (!anAssert.getType().getJavaType().isAssignableFrom(rsValue.getClass())) {
+				throw new TestFailException(String.format("Invalid assert type for [%s]", anAssert.getPath()), anAssert.getType().getJavaType(), rsValue.getClass());
 			}
 
 			// TODO check value
+			if (anAssert.getValue() != null) {
+				Object expectedValue = null;
+				switch (anAssert.getType()) {
+					case NONE:
+					case LIST:
+						break;
+
+					case STRING:
+						expectedValue = anAssert.getValue();
+						break;
+
+					case INTEGER:
+						rsValue = Long.valueOf(rsValue.toString());
+						expectedValue = Long.valueOf(anAssert.getValue());
+						break;
+
+					case REAL:
+						rsValue = new BigDecimal(rsValue.toString());
+						expectedValue = new BigDecimal(anAssert.getValue());
+						break;
+
+					case BOOLEAN:
+						expectedValue = Boolean.valueOf(anAssert.getValue());
+						break;
+
+					default:
+						throw new TestFailException("Invalid type: " + anAssert.getType());
+				}
+
+				if (expectedValue != null) {
+					if (!expectedValue.equals(rsValue)) {
+						throw new TestFailException("Invalid Value for path: " + anAssert.getPath(), expectedValue, rsValue);
+					}
+				}
+			}
 
 			if (anAssert.getStoreAsParam() != null) {
-				CONTEXT.put(anAssert.getStoreAsParam(), val);
+				CONTEXT.put(anAssert.getStoreAsParam(), rsValue);
 			}
 		} else {
 			if (anAssert.isHasValue() || anAssert.getStoreAsParam() != null) {
@@ -158,6 +230,10 @@ public class ITestFactory {
 	}
 
 	private void startApp(BootApp app) {
+		if (CONTEXT.containsKey(app.getName())) {
+			throw new TestFailException("App/Service already defined: " + app.getName());
+		}
+
 		try {
 			Map<String, Object> p1 = new HashMap<>();
 			if (app.getProfile() != null) {
@@ -183,7 +259,11 @@ public class ITestFactory {
 
 	private void processService(Service service) {
 		AppInfo info = new AppInfo(service.getHost(), service.getPort(), service.getContext());
-		CONTEXT.put(service.getName(), info);
+		if (!CONTEXT.containsKey(service.getName())) {
+			CONTEXT.put(service.getName(), info);
+		} else {
+			throw new TestFailException("App/Service already defined: " + service.getName());
+		}
 	}
 
 	// --------------- helper

@@ -8,35 +8,154 @@
 	</services>
 
 	<params>
-		<param name="ShopName" value="shop1"/>
-		<param name="MUsername" value="+989121234567"/>
+		<param name="idx" value="011"/>
+
+		<param name="ShopName" value="shop${idx}"/>
+		<param name="MUsername" value="+989121234${idx}"/>
 		<param name="MPassword" value="asd"/>
+		<param name="ShopDomain" value="myshop.com"/>
+		<param name="ShopUrl" value="${ShopDomain}:${Kernel.port}${Kernel.context}"/>
+
+		<param name="CUsername" value="+989219876${idx}"/>
+		<param name="CPassword" value="qaz"/>
 	</params>
 
 	<rests>
+
+		<!-- MERCHANT-->
+
 		<rest app="Kernel" uri="/api/auth/registrations" method="POST">
-			<body><![CDATA[
+			<request>
+				<body><![CDATA[
 {
 	"storeName": "${ShopName}",
 	"username": "${MUsername}",
 	"password": "${MPassword}"
 }
 ]]></body>
-			<response status="OK">
-				<asserts>
-					<assert path="personId" type="STRING" hasValue="true" storeAsParam="PersonID"/>
+				<response status="OK">
+					<assert path="personId" type="STRING" storeAsParam="PersonID"/>
 					<assert path="usernameType" type="STRING" value="Cell"/>
-				</asserts>
-			</response>
+				</response>
+
+			</request>
 		</rest>
 
 		<rest app="Kernel" uri="/api/auth/registrations/${PersonID}/1234" method="GET">
 			<response status="OK">
-				<asserts>
-					<assert path="access_token" type="STRING" storeAsParam="MerchantToken"/>
-					<assert path="token_type" type="STRING" value="bearer"/>
-				</asserts>
+				<assert path="access_token" type="STRING" storeAsParam="MerchantToken"/>
+				<assert path="token_type" type="STRING" value="bearer"/>
 			</response>
 		</rest>
+
+		<rest app="Kernel" uri="/api/stores/current" method="GET" bearerToken="${MerchantToken}">
+			<response status="OK">
+				<assert path="id" type="STRING" storeAsParam="StoreID"/>
+				<assert path="version" type="INTEGER" value="0" storeAsParam="StoreVer"/>
+			</response>
+		</rest>
+
+		<rest app="Kernel" uri="/api/stores/current" method="PUT" bearerToken="${MerchantToken}">
+			<request>
+				<body><![CDATA[
+{
+	"name": "myshop",
+	"version": ${StoreVer},
+	"domainName": "localhost"
+}
+]]></body>
+				<response status="BAD_REQUEST">
+					<assert path="errors" type="LIST"/>
+				</response>
+			</request>
+
+			<request>
+				<body><![CDATA[
+{
+	"name": "myshop",
+	"title": {"en": "MyShop"},
+	"version": ${StoreVer},
+	"domainName": "myshop.com"
+}
+]]></body>
+				<response status="OK" ignoreOthers="true">
+					<assert path="version" type="INTEGER" storeAsParam="StoreVer"/>
+				</response>
+			</request>
+		</rest>
+
+
+		<!-- CUSTOMER -->
+
+		<rest url="${ShopUrl}/api/customers/registrations/anonymous" method="GET">
+			<response status="OK">
+				<assert path="access_token" type="STRING" storeAsParam="GuestToken"/>
+				<assert path="token_type" type="STRING" value="bearer"/>
+			</response>
+		</rest>
+
+		<rest url="${ShopUrl}/api/customers/registrations" method="POST" bearerToken="${GuestToken}">
+			<request>
+				<body><![CDATA[
+		{
+			"cell": "${CUsername}",
+			"password": "${CPassword}",
+			"firstName": "A1",
+			"lastName": "A2",
+			"address": {
+				"address": "address",
+				"postalCode": "1234567890",
+				"cityId": 1000
+			}
+		}
+		]]></body>
+				<response status="OK">
+					<assert path="customerId" type="STRING" storeAsParam="CustomerID"/>
+					<assert path="usernameType" type="STRING" value="Cell"/>
+				</response>
+
+			</request>
+		</rest>
+
+		<rest url="${ShopUrl}/api/customers/registrations/${CustomerID}/1234" method="GET" bearerToken="${GuestToken}">
+			<response status="OK">
+				<assert path="access_token" type="STRING" storeAsParam="CustomerToken"/>
+				<assert path="token_type" type="STRING" value="bearer"/>
+			</response>
+		</rest>
+
+		<rest url="${ShopUrl}/api/customers/current/addresses" method="POST" bearerToken="${CustomerToken}">
+			<request>
+				<body><![CDATA[
+		{
+			"cityId": 2000,
+			"address": "address1",
+			"postalCode": "1111111111",
+			"version": 0
+		}]]></body>
+				<response status="OK"/>
+			</request>
+		</rest>
+
+		<rest url="${ShopUrl}/api/customers/current" method="GET" bearerToken="${CustomerToken}">
+			<response status="OK"/>
+		</rest>
+
+		<!-- MERCHANT-->
+
+		<rest app="Kernel" uri="/api/customers/search" method="POST" bearerToken="${MerchantToken}">
+			<request>
+				<body><![CDATA[
+{
+	"startIndex": 0,
+	"count": 10
+}
+]]></body>
+				<response status="OK">
+					<assert path="totalCount" type="INTEGER" hasValue="true"/>
+				</response>
+			</request>
+		</rest>
+
 	</rests>
 </itest>
