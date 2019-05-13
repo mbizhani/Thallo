@@ -20,11 +20,13 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @DirtiesContext
 public class TestCDC {
+
 
 	@Autowired
 	private BookRepository bookRepository;
@@ -108,6 +110,9 @@ public class TestCDC {
 			final VPerson vPerson2 = vPersonRepository.findById(2L).orElseThrow(RuntimeException::new);
 			assertEquals("A1", vPerson2.getName());
 		}
+
+		System.out.println("### CdcTestApp.noOfEvent = " + CdcTestApp.noOfEvent);
+		assertTrue(CdcTestApp.noOfEvent > 0);
 	}
 
 }

@@ -103,7 +103,10 @@ public class CdcConfiguration {
 	}
 
 	public static class ReceiveEnd extends BaseEnd {
+		private Boolean internalEventEnabled = true;
 		private Map<String, String> mappedClasses = new HashMap<>();
+
+		// ---------------
 
 		public Map<String, String> getMappedClasses() {
 			return mappedClasses;
@@ -111,6 +114,14 @@ public class CdcConfiguration {
 
 		public void setMappedClasses(Map<String, String> mappedClasses) {
 			this.mappedClasses = mappedClasses;
+		}
+
+		public Boolean getInternalEventEnabled() {
+			return internalEventEnabled;
+		}
+
+		public void setInternalEventEnabled(Boolean internalEventEnabled) {
+			this.internalEventEnabled = internalEventEnabled;
 		}
 	}
 
