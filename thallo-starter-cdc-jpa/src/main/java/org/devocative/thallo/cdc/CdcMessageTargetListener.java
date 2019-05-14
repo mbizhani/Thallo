@@ -5,7 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.devocative.thallo.cdc.annotation.CdcTarget;
-import org.devocative.thallo.cdc.message.CdcEvent;
+import org.devocative.thallo.cdc.event.CdcEvent;
+import org.devocative.thallo.cdc.event.EEventType;
 import org.devocative.thallo.cdc.message.CdcMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,28 +199,35 @@ public class CdcMessageTargetListener {
 	}
 
 	private void handleEntity(CdcMessage cdcMessage, Object finalObject) {
+		EEventType eventType = null;
+
 		switch (cdcMessage.getAction()) {
 			case Create:
 				entityManager.persist(finalObject);
+				eventType = EEventType.Created;
 				break;
 
 			case Update:
 				entityManager.merge(finalObject);
+				eventType = EEventType.Updated;
 				break;
 
 			case Delete:
 				entityManager.remove(finalObject);
+				eventType = EEventType.Deleted;
 				break;
 		}
+		entityManager.flush();
 
-		if (configuration.getReceive().getInternalEventEnabled()) {
+		if (configuration.getReceive().getInternalEventEnabled() /*&& eventType != null*/) {
 			try {
 				Map<String, Object> sourceData = mapper.readValue(cdcMessage.getBody(), new TypeReference<Map<String, Object>>() {
 				});
-				eventService.publishEvent(new CdcEvent(cdcMessage.getAction(), finalObject, sourceData));
+				eventService.publishEvent(new CdcEvent(eventType, finalObject, sourceData));
 			} catch (Exception e) {
 				throw new CdcException("Unable to convert message's body to map");
 			}
+
 		}
 	}
 }

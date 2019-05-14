@@ -1,6 +1,6 @@
 package org.devocative.thallo.cdc;
 
-import org.devocative.thallo.cdc.message.CdcEvent;
+import org.devocative.thallo.cdc.event.CdcEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;

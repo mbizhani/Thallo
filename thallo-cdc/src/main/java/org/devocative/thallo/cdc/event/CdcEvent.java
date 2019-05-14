@@ -1,20 +1,20 @@
-package org.devocative.thallo.cdc.message;
+package org.devocative.thallo.cdc.event;
 
 import java.util.Map;
 
 public class CdcEvent {
-	private final EAction action;
+	private final EEventType type;
 	private final Object target;
 	private final Map<String, Object> source;
 
-	public CdcEvent(EAction action, Object target, Map<String, Object> source) {
-		this.action = action;
+	public CdcEvent(EEventType type, Object target, Map<String, Object> source) {
+		this.type = type;
 		this.target = target;
 		this.source = source;
 	}
 
-	public EAction getAction() {
-		return action;
+	public EEventType getType() {
+		return type;
 	}
 
 	public Object getTarget() {
@@ -27,6 +27,6 @@ public class CdcEvent {
 
 	@Override
 	public String toString() {
-		return String.format("CdcEvent(%s, %s)", action, target);
+		return String.format("CdcEvent(%s, %s)", type, target);
 	}
 }

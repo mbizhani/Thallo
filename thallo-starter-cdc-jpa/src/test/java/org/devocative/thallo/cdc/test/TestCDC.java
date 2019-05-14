@@ -111,8 +111,13 @@ public class TestCDC {
 			assertEquals("A1", vPerson2.getName());
 		}
 
-		System.out.println("### CdcTestApp.noOfEvent = " + CdcTestApp.noOfEvent);
-		assertTrue(CdcTestApp.noOfEvent > 0);
+		System.out.println("### CdcTestApp.noOfCreated = " + CdcTestApp.noOfCreated);
+		System.out.println("### CdcTestApp.noOfUpdated = " + CdcTestApp.noOfUpdated);
+		System.out.println("### CdcTestApp.noOfDeleted = " + CdcTestApp.noOfDeleted);
+
+		assertTrue(CdcTestApp.noOfCreated > 0);
+		assertEquals(2, CdcTestApp.noOfUpdated);
+		assertEquals(0, CdcTestApp.noOfDeleted);
 	}
 
 }
