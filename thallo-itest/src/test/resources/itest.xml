@@ -1,10 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE itest PUBLIC
+	"Devocative/Thallo ITest"
+	"http://www.devocative.org/dtd/thallo-itest.dtd">
+
 <itest>
-	<!--<bootApps>
-		<bootApp name="Kernel" fqn="ir.maxsa.kernel.KernelApplication" profile="h2" context="/kernel"/>
-	</bootApps>-->
+	<kafka/>
+	<redis/>
 
 	<services>
-		<service name="Kernel" host="localhost" port="8080" context="/kernel"/>
+		<!--<bootApp name="Kernel" fqn="ir.maxsa.kernel.KernelApplication" profile="h2" context="/kernel"/>-->
+		<remote name="Kernel" host="localhost" port="8080" context="/kernel"/>
 	</services>
 
 	<params>
@@ -24,7 +30,7 @@
 
 		<!-- MERCHANT-->
 
-		<rest app="Kernel" uri="/api/auth/registrations" method="POST">
+		<rest service="Kernel" uri="/api/auth/registrations" method="POST">
 			<request>
 				<body><![CDATA[
 {
@@ -41,21 +47,21 @@
 			</request>
 		</rest>
 
-		<rest app="Kernel" uri="/api/auth/registrations/${PersonID}/1234" method="GET">
+		<rest service="Kernel" uri="/api/auth/registrations/${PersonID}/1234" method="GET">
 			<response status="OK">
 				<assert path="access_token" type="STRING" storeAsParam="MerchantToken"/>
 				<assert path="token_type" type="STRING" value="bearer"/>
 			</response>
 		</rest>
 
-		<rest app="Kernel" uri="/api/stores/current" method="GET" bearerToken="${MerchantToken}">
+		<rest service="Kernel" uri="/api/stores/current" method="GET" bearerToken="${MerchantToken}">
 			<response status="OK">
 				<assert path="id" type="STRING" storeAsParam="StoreID"/>
 				<assert path="version" type="INTEGER" value="0" storeAsParam="StoreVer"/>
 			</response>
 		</rest>
 
-		<rest app="Kernel" uri="/api/stores/current" method="PUT" bearerToken="${MerchantToken}">
+		<rest service="Kernel" uri="/api/stores/current" method="PUT" bearerToken="${MerchantToken}">
 			<request>
 				<body><![CDATA[
 {
@@ -97,18 +103,18 @@
 		<rest url="${ShopUrl}/api/customers/registrations" method="POST" bearerToken="${GuestToken}">
 			<request>
 				<body><![CDATA[
-		{
-			"cell": "${CUsername}",
-			"password": "${CPassword}",
-			"firstName": "A1",
-			"lastName": "A2",
-			"address": {
-				"address": "address",
-				"postalCode": "1234567890",
-				"cityId": 1000
-			}
-		}
-		]]></body>
+{
+	"cell": "${CUsername}",
+	"password": "${CPassword}",
+	"firstName": "A1",
+	"lastName": "A2",
+	"address": {
+		"address": "address",
+		"postalCode": "1234567890",
+		"cityId": 1000
+	}
+}
+]]></body>
 				<response status="OK">
 					<assert path="customerId" type="STRING" storeAsParam="CustomerID"/>
 					<assert path="usernameType" type="STRING" value="Cell"/>
@@ -127,23 +133,31 @@
 		<rest url="${ShopUrl}/api/customers/current/addresses" method="POST" bearerToken="${CustomerToken}">
 			<request>
 				<body><![CDATA[
-		{
-			"cityId": 2000,
-			"address": "address1",
-			"postalCode": "1111111111",
-			"version": 0
-		}]]></body>
+{
+	"cityId": 2000,
+	"address": "address1",
+	"postalCode": "1111111111",
+	"version": 0
+}]]></body>
 				<response status="OK"/>
 			</request>
 		</rest>
 
 		<rest url="${ShopUrl}/api/customers/current" method="GET" bearerToken="${CustomerToken}">
-			<response status="OK"/>
+			<response status="OK">
+				<assert path="anonymous" type="BOOLEAN" value="false"/>
+			</response>
+		</rest>
+
+		<rest url="${ShopUrl}/api/customers/current" method="GET" bearerToken="${CustomerToken}">
+			<response status="OK">
+				<assert path="anonymous" type="BOOLEAN" value="false"/>
+			</response>
 		</rest>
 
 		<!-- MERCHANT-->
 
-		<rest app="Kernel" uri="/api/customers/search" method="POST" bearerToken="${MerchantToken}">
+		<rest service="Kernel" uri="/api/customers/search" method="POST" bearerToken="${MerchantToken}">
 			<request>
 				<body><![CDATA[
 {

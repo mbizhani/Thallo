@@ -1,0 +1,42 @@
+<!ELEMENT itest (kafka|redis|services|params|rests)*>
+	<!ELEMENT kafka (#PCDATA)>
+	<!ELEMENT redis (#PCDATA)>
+	<!ELEMENT services (bootApp|remote)*>
+	<!ELEMENT bootApp (#PCDATA)>
+	<!ATTLIST bootApp
+		name CDATA #REQUIRED
+		fqn CDATA #REQUIRED
+		profile CDATA #IMPLIED
+		context CDATA #IMPLIED>
+	<!ELEMENT remote (#PCDATA)>
+	<!ATTLIST remote
+		name CDATA #REQUIRED
+		host CDATA #REQUIRED
+		port CDATA #REQUIRED
+		context CDATA #IMPLIED>
+	<!ELEMENT params (param)*>
+	<!ELEMENT param (#PCDATA)>
+	<!ATTLIST param
+		name CDATA #REQUIRED
+		value CDATA #REQUIRED>
+	<!ELEMENT rests (rest)*>
+	<!ELEMENT rest (request|response)*>
+	<!ATTLIST rest
+		service CDATA #IMPLIED
+		bearerToken CDATA #IMPLIED
+		method (GET|POST|PUT|DELETE) #REQUIRED
+		uri CDATA #IMPLIED
+		url CDATA #IMPLIED>
+	<!ELEMENT request (body|response)*>
+	<!ELEMENT body (#PCDATA)>
+	<!ELEMENT response (assert)*>
+	<!ATTLIST response
+		ignoreOthers (true|false) #IMPLIED
+		status (OK|CREATED|BAD_REQUEST|UNAUTHORIZED|FORBIDDEN|NOT_FOUND|METHOD_NOT_ALLOWED|NOT_ACCEPTABLE) #REQUIRED>
+	<!ELEMENT assert (#PCDATA)>
+	<!ATTLIST assert
+		hasValue (true|false) #IMPLIED
+		path CDATA #REQUIRED
+		storeAsParam CDATA #IMPLIED
+		type (STRING|INTEGER|REAL|BOOLEAN|LIST) #REQUIRED
+		value CDATA #IMPLIED>

@@ -19,7 +19,7 @@ public class Rest {
 	private String url;
 
 	@XStreamAsAttribute
-	private String app;
+	private String service;
 
 	@XStreamAsAttribute
 	private String uri;

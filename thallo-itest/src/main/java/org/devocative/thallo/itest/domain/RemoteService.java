@@ -7,17 +7,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@XStreamAlias("service")
-public class Service {
-	@XStreamAsAttribute
-	private String name;
-
+@XStreamAlias("remote")
+public class RemoteService extends AbstractService {
 	@XStreamAsAttribute
 	private String host;
 
 	@XStreamAsAttribute
 	private Integer port;
-
-	@XStreamAsAttribute
-	private String context;
 }

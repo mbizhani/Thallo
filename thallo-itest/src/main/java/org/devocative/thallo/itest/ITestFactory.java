@@ -6,21 +6,25 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.IOUtils;
 import org.devocative.thallo.itest.domain.*;
+import org.devocative.thallo.itest.embedded.IEmbeddedService;
+import org.devocative.thallo.itest.embedded.KafkaEmbeddedService;
+import org.devocative.thallo.itest.embedded.RedisEmbeddedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
-import redis.embedded.RedisServer;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,44 +32,58 @@ import java.util.Map;
 
 public class ITestFactory {
 	private static final Logger log = LoggerFactory.getLogger(ITestFactory.class);
+	private static final String CLASSPATH_PREFIX = "classpath:";
 
 	private final Map<String, Object> CONTEXT = new HashMap<>();
 	private final Binding binding = new Binding(CONTEXT);
 	private final GroovyShell shell = new GroovyShell();
-	private final List<ConfigurableApplicationContext> applicationContexts = new ArrayList<>();
 	private final RestTemplate template = new RestTemplate();
 	private final ObjectMapper mapper = new ObjectMapper();
 
+	private final List<ConfigurableApplicationContext> applicationContexts = new ArrayList<>();
+	private final List<IEmbeddedService> embeddedServices = new ArrayList<>();
+	private final String xmlFile;
 
-	public void run() {
-		EmbeddedKafkaBroker embeddedKafka = null;
-		RedisServer redisServer = null;
+	private ITest iTest;
 
+	public ITestFactory(String xmlFile) {
+		this.xmlFile = xmlFile;
+	}
+
+	public void init() {
 		try {
+			InputStream stream;
+			if (xmlFile.startsWith(CLASSPATH_PREFIX)) {
+				stream = getClass().getResourceAsStream(xmlFile.substring(CLASSPATH_PREFIX.length()));
+				if (stream == null) {
+					throw new FileNotFoundException(xmlFile);
+				}
+			} else {
+				stream = new FileInputStream(xmlFile);
+			}
+
 			XStream xStream = new XStream();
 			xStream.processAnnotations(ITest.class);
-			ITest iTest = (ITest) xStream.fromXML(ITestFactory.class.getResourceAsStream("/itest.xml"));
+			xStream.processAnnotations(BootApp.class);
+			xStream.processAnnotations(RemoteService.class);
+			iTest = (ITest) xStream.fromXML(stream);
 
-			if (!iTest.getBootApps().isEmpty()) {
-				embeddedKafka = new EmbeddedKafkaBroker(1, true);
-				embeddedKafka.afterPropertiesSet();
-				System.setProperty("spring.kafka.bootstrap-servers", embeddedKafka.getBrokersAsString());
-				log.info("ITestFactory Startup\n###\nKafka: {}\n###\n", embeddedKafka.getBrokersAsString());
-
-				final Integer redisPort = findRandomOpenPortOnAllLocalInterfaces();
-				redisServer = new RedisServer(redisPort);
-				System.setProperty("spring.redis.port", redisPort.toString());
-				System.setProperty("spring.redis.password", "");
-				redisServer.start();
-				log.info("ITestFactory Startup\n###\nRedis Port: {}\n###\n", redisPort);
+			if (iTest.getKafka() != null) {
+				embeddedServices.add(new KafkaEmbeddedService());
 			}
-
-			if (!iTest.getBootApps().isEmpty()) {
-				iTest.getBootApps().forEach(this::startApp);
+			if (iTest.getRedis() != null) {
+				embeddedServices.add(new RedisEmbeddedService());
 			}
+			embeddedServices.forEach(IEmbeddedService::start);
 
-			if (!iTest.getServices().isEmpty()) {
-				iTest.getServices().forEach(this::processService);
+			for (AbstractService service : iTest.getServices()) {
+				if (service instanceof BootApp) {
+					startApp((BootApp) service);
+				} else if (service instanceof RemoteService) {
+					processService((RemoteService) service);
+				} else {
+					throw new RuntimeException("Invalid service type");
+				}
 			}
 
 			iTest.getParams().forEach(param ->
@@ -85,19 +103,26 @@ public class ITestFactory {
 				}
 			});
 
-			log.info("\n#########################\n T H A L L O   I T E S T \n#########################\n");
+			final String banner = IOUtils.toString(getClass().getResourceAsStream("/itest-banner.txt"), "utf8");
+			log.info(banner);
 
-			iTest.getRests().forEach(this::execute);
-		} finally {
-			applicationContexts.forEach(ConfigurableApplicationContext::close);
-			if (embeddedKafka != null) {
-				embeddedKafka.destroy();
-			}
-			if (redisServer != null) {
-				redisServer.stop();
-			}
-
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
+	}
+
+	public void run() {
+		iTest.getRests().forEach(this::execute);
+
+		log.info("\n\n" +
+			"#######################################################\n" +
+			"## I T E S T   P A S S E D   S U C C E S S F U L L Y ##\n" +
+			"#######################################################\n");
+	}
+
+	public void destroy() {
+		applicationContexts.forEach(ConfigurableApplicationContext::close);
+		embeddedServices.forEach(IEmbeddedService::stop);
 	}
 
 	// ------------------------------
@@ -105,9 +130,9 @@ public class ITestFactory {
 	private void execute(Rest rest) {
 		final String url;
 		if (rest.getUri() != null) {
-			final AppInfo info = (AppInfo) CONTEXT.get(rest.getApp());
+			final AppInfo info = (AppInfo) CONTEXT.get(rest.getService());
 			if (info == null) {
-				throw new TestFailException(String.format("Invalid 'app' for rest [%s]: %s", rest.getUri(), rest.getApp()));
+				throw new TestFailException(String.format("Invalid 'service' for rest [%s]: %s", rest.getUri(), rest.getService()));
 			}
 			url = "http://" + info.host + ":" + info.port + info.context + processStringTemplate(rest.getUri());
 		} else if (rest.getUrl() != null) {
@@ -133,7 +158,7 @@ public class ITestFactory {
 		} else {
 			rqBody = request.getBody() != null ? processStringTemplate(request.getBody()).trim() : "";
 		}
-		log.info("# R E S T   R E Q U E S T #\n{} {}\n{}", rest.getMethod(), url, rqBody);
+		log.info("\n\n## R E S T   R E Q U E S T ##\n{} {}\n{}\n\n", rest.getMethod(), url, rqBody);
 
 		final HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -145,7 +170,7 @@ public class ITestFactory {
 		ResponseEntity<String> exchange = template.exchange(url, rest.getMethod(), entity, String.class);
 		final HttpStatus rsStatus = exchange.getStatusCode();
 		final String rsBody = exchange.getBody();
-		log.info("# R E S T   R E S P O N S E #\nSTATUS: [{}]\n{}", rsStatus, prettyJson(rsBody));
+		log.info("\n\n## R E S T   R E S P O N S E ##\nSTATUS: [{}]\n{}\n\n", rsStatus, prettyJson(rsBody));
 
 		if (request == null && rest.getResponse() != null) {
 			processRs(rsStatus, rsBody, rest.getResponse());
@@ -231,7 +256,8 @@ public class ITestFactory {
 
 	private void startApp(BootApp app) {
 		if (CONTEXT.containsKey(app.getName())) {
-			throw new TestFailException("App/Service already defined: " + app.getName());
+			log.warn("BootApp/RemoteService already defined: {}", app.getName());
+			return;
 		}
 
 		try {
@@ -241,8 +267,9 @@ public class ITestFactory {
 			}
 
 			if (app.getContext() != null) {
-				final int port = findRandomOpenPortOnAllLocalInterfaces();
+				final int port = Util.findRandomOpenPortOnAllLocalInterfaces();
 				p1.put("server.port", port);
+				p1.put("server.servlet.context-path", app.getContext());
 				CONTEXT.put(app.getName(), new AppInfo("localhost", port, app.getContext()));
 			}
 
@@ -257,12 +284,12 @@ public class ITestFactory {
 		}
 	}
 
-	private void processService(Service service) {
+	private void processService(RemoteService service) {
 		AppInfo info = new AppInfo(service.getHost(), service.getPort(), service.getContext());
 		if (!CONTEXT.containsKey(service.getName())) {
 			CONTEXT.put(service.getName(), info);
 		} else {
-			throw new TestFailException("App/Service already defined: " + service.getName());
+			log.warn("BootApp/RemoteService already defined: {}", service.getName());
 		}
 	}
 
@@ -305,14 +332,6 @@ public class ITestFactory {
 		try {
 			return mapper.readValue(json, List.class);
 		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private Integer findRandomOpenPortOnAllLocalInterfaces() {
-		try (ServerSocket socket = new ServerSocket(0)) {
-			return socket.getLocalPort();
-		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}

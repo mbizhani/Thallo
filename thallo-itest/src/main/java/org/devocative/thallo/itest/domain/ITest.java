@@ -9,9 +9,11 @@ import java.util.List;
 @Setter
 @XStreamAlias("itest")
 public class ITest {
-	private List<BootApp> bootApps;
+	private EmbeddedService kafka;
 
-	private List<Service> services;
+	private EmbeddedService redis;
+
+	private List<AbstractService> services;
 
 	private List<Param> params;
 
@@ -19,11 +21,15 @@ public class ITest {
 
 	// ------------------------------
 
-	public List<BootApp> getBootApps() {
-		return bootApps != null ? bootApps : Collections.emptyList();
+	public EmbeddedService getKafka() {
+		return kafka;
 	}
 
-	public List<Service> getServices() {
+	public EmbeddedService getRedis() {
+		return redis;
+	}
+
+	public List<AbstractService> getServices() {
 		return services != null ? services : Collections.emptyList();
 	}
 
