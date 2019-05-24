@@ -5,16 +5,11 @@ import com.thoughtworks.xstream.XStream;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.IOUtils;
 import org.devocative.thallo.itest.domain.*;
-import org.devocative.thallo.itest.embedded.IEmbeddedService;
-import org.devocative.thallo.itest.embedded.KafkaEmbeddedService;
-import org.devocative.thallo.itest.embedded.RedisEmbeddedService;
+import org.devocative.thallo.itest.domain.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.ResponseErrorHandler;
@@ -25,23 +20,19 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ITestFactory {
 	private static final Logger log = LoggerFactory.getLogger(ITestFactory.class);
 	private static final String CLASSPATH_PREFIX = "classpath:";
 
-	private final Map<String, Object> CONTEXT = new HashMap<>();
+	private final Map<String, Object> CONTEXT = IService.CONTEXT;
 	private final Binding binding = new Binding(CONTEXT);
 	private final GroovyShell shell = new GroovyShell();
 	private final RestTemplate template = new RestTemplate();
 	private final ObjectMapper mapper = new ObjectMapper();
 
-	private final List<ConfigurableApplicationContext> applicationContexts = new ArrayList<>();
-	private final List<IEmbeddedService> embeddedServices = new ArrayList<>();
+	private final Map<AbstractService, IService<? extends AbstractService>> iservices = new LinkedHashMap<>();
 	private final String xmlFile;
 
 	private ITest iTest;
@@ -65,25 +56,17 @@ public class ITestFactory {
 			XStream xStream = new XStream();
 			xStream.processAnnotations(ITest.class);
 			xStream.processAnnotations(BootApp.class);
-			xStream.processAnnotations(RemoteService.class);
+			xStream.processAnnotations(BootClass.class);
+			xStream.processAnnotations(Remote.class);
+			xStream.processAnnotations(Kafka.class);
+			xStream.processAnnotations(Redis.class);
 			iTest = (ITest) xStream.fromXML(stream);
 
-			if (iTest.getKafka() != null) {
-				embeddedServices.add(new KafkaEmbeddedService());
-			}
-			if (iTest.getRedis() != null) {
-				embeddedServices.add(new RedisEmbeddedService());
-			}
-			embeddedServices.forEach(IEmbeddedService::start);
-
-			for (AbstractService service : iTest.getServices()) {
-				if (service instanceof BootApp) {
-					startApp((BootApp) service);
-				} else if (service instanceof RemoteService) {
-					processService((RemoteService) service);
-				} else {
-					throw new RuntimeException("Invalid service type");
-				}
+			iTest.getServices().forEach(service -> iservices.put(service, service.create()));
+			for (Map.Entry<AbstractService, IService<? extends AbstractService>> entry : iservices.entrySet()) {
+				AbstractService service = entry.getKey();
+				Optional<ServiceInfo> optional = entry.getValue().start();
+				optional.ifPresent(info -> CONTEXT.put(service.getName(), info));
 			}
 
 			iTest.getParams().forEach(param ->
@@ -105,13 +88,12 @@ public class ITestFactory {
 
 			final String banner = IOUtils.toString(getClass().getResourceAsStream("/itest-banner.txt"), "utf8");
 			log.info(banner);
-
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public void run() {
+	public void start() {
 		iTest.getRests().forEach(this::execute);
 
 		log.info("\n\n" +
@@ -120,9 +102,8 @@ public class ITestFactory {
 			"#######################################################\n");
 	}
 
-	public void destroy() {
-		applicationContexts.forEach(ConfigurableApplicationContext::close);
-		embeddedServices.forEach(IEmbeddedService::stop);
+	public void stop() {
+		iservices.values().forEach(IService::stop);
 	}
 
 	// ------------------------------
@@ -130,11 +111,11 @@ public class ITestFactory {
 	private void execute(Rest rest) {
 		final String url;
 		if (rest.getUri() != null) {
-			final AppInfo info = (AppInfo) CONTEXT.get(rest.getService());
+			final ServiceInfo info = (ServiceInfo) CONTEXT.get(rest.getService());
 			if (info == null) {
 				throw new TestFailException(String.format("Invalid 'service' for rest [%s]: %s", rest.getUri(), rest.getService()));
 			}
-			url = "http://" + info.host + ":" + info.port + info.context + processStringTemplate(rest.getUri());
+			url = "http://" + info.getHost() + ":" + info.getPort() + info.getContext() + processStringTemplate(rest.getUri());
 		} else if (rest.getUrl() != null) {
 			String pUrl = processStringTemplate(rest.getUrl());
 			url = pUrl.startsWith("http://") || pUrl.startsWith("https://") ? pUrl : "http://" + pUrl;
@@ -254,45 +235,6 @@ public class ITestFactory {
 		}
 	}
 
-	private void startApp(BootApp app) {
-		if (CONTEXT.containsKey(app.getName())) {
-			log.warn("BootApp/RemoteService already defined: {}", app.getName());
-			return;
-		}
-
-		try {
-			Map<String, Object> p1 = new HashMap<>();
-			if (app.getProfile() != null) {
-				p1.put("spring.profiles.active", app.getProfile());
-			}
-
-			if (app.getContext() != null) {
-				final int port = Util.findRandomOpenPortOnAllLocalInterfaces();
-				p1.put("server.port", port);
-				p1.put("server.servlet.context-path", app.getContext());
-				CONTEXT.put(app.getName(), new AppInfo("localhost", port, app.getContext()));
-			}
-
-			Class<?> appClass = Class.forName(app.getFqn());
-			ConfigurableApplicationContext context = new SpringApplicationBuilder(appClass)
-				.properties(p1)
-				.build()
-				.run();
-			applicationContexts.add(context);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private void processService(RemoteService service) {
-		AppInfo info = new AppInfo(service.getHost(), service.getPort(), service.getContext());
-		if (!CONTEXT.containsKey(service.getName())) {
-			CONTEXT.put(service.getName(), info);
-		} else {
-			log.warn("BootApp/RemoteService already defined: {}", service.getName());
-		}
-	}
-
 	// --------------- helper
 
 	private Object evaluate(Map map, String expr) {
@@ -334,12 +276,5 @@ public class ITestFactory {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	@RequiredArgsConstructor
-	private static class AppInfo {
-		private final String host;
-		private final int port;
-		private final String context;
 	}
 }

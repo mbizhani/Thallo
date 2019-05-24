@@ -14,4 +14,14 @@ public class Param {
 
 	@XStreamAsAttribute
 	private String value;
+
+	// ------------------------------
+
+	public Param() {
+	}
+
+	public Param(String name, String value) {
+		this.name = name;
+		this.value = value;
+	}
 }

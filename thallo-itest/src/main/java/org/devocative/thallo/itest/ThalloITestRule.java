@@ -20,12 +20,12 @@ public class ThalloITestRule extends ExternalResource {
 
 	@Override
 	protected void after() {
-		testFactory.destroy();
+		testFactory.stop();
 	}
 
 	// ---------------
 
 	public void run() {
-		testFactory.run();
+		testFactory.start();
 	}
 }

@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE itest PUBLIC
+<!--<!DOCTYPE itest PUBLIC
 	"Devocative/Thallo ITest"
-	"http://www.devocative.org/dtd/thallo-itest.dtd">
+	"http://www.devocative.org/dtd/thallo-itest.dtd">-->
 
 <itest>
-	<kafka/>
-	<redis/>
 
 	<services>
-		<!--<bootApp name="Kernel" fqn="ir.maxsa.kernel.KernelApplication" profile="h2" context="/kernel"/>-->
-		<remote name="Kernel" host="localhost" port="8080" context="/kernel"/>
+		<kafka defaultPort="true"/>
+		<redis defaultPort="true"/>
+
+		<bootClass name="Kernel" fqn="ir.maxsa.kernel.KernelApplication" profile="h2" context="/kernel"/>
+		<!--		<bootClass name="Order" fqn="ir.maxsa.order.OrderApplication" profile="h2" context="/order"/>-->
+		<!--		<remote name="Kernel" host="localhost" port="8080" context="/kernel"/>-->
 	</services>
 
 	<params>

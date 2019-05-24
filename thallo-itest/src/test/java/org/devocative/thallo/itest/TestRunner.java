@@ -6,9 +6,9 @@ public class TestRunner {
 		ITestFactory factory = new ITestFactory("classpath:/itest.xml");
 		try {
 			factory.init();
-			factory.run();
+			factory.start();
 		} finally {
-			factory.destroy();
+			factory.stop();
 		}
 	}
 }

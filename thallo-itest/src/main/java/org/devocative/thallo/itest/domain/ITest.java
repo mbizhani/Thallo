@@ -9,10 +9,6 @@ import java.util.List;
 @Setter
 @XStreamAlias("itest")
 public class ITest {
-	private EmbeddedService kafka;
-
-	private EmbeddedService redis;
-
 	private List<AbstractService> services;
 
 	private List<Param> params;
@@ -20,14 +16,6 @@ public class ITest {
 	private List<Rest> rests;
 
 	// ------------------------------
-
-	public EmbeddedService getKafka() {
-		return kafka;
-	}
-
-	public EmbeddedService getRedis() {
-		return redis;
-	}
 
 	public List<AbstractService> getServices() {
 		return services != null ? services : Collections.emptyList();
