@@ -8,6 +8,7 @@ import org.devocative.thallo.alog.annotation.ELogMode;
 import org.devocative.thallo.alog.annotation.ELogPlace;
 import org.devocative.thallo.alog.annotation.EStackTraceLogType;
 import org.devocative.thallo.alog.annotation.LogIt;
+import org.devocative.thallo.common.StackTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -101,7 +102,7 @@ public class MethodLogAspect {
 						case Filtered:
 							builder
 								.append("\n")
-								.append(new StackTraceProcessor(error, declaringType).process());
+								.append(StackTraceProcessor.filter(error, declaringType));
 							log.error(builder.toString());
 							break;
 
