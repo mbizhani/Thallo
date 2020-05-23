@@ -1,4 +1,4 @@
-package org.devocative.thallo.test;
+package org.devocative.thallo.common;
 
 public class Level2Exception extends RuntimeException {
 
