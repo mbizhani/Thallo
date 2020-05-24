@@ -1,4 +1,4 @@
-package org.devocative.thallo.common.app;
+package org.devocative.thallo.common.app.model;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 
 import javax.persistence.*;
 
-import static org.devocative.thallo.common.app.User.UC_OA_USER_USERNAME;
+import static org.devocative.thallo.common.app.model.User.UC_OA_USER_USERNAME;
 
 @Getter
 @Setter

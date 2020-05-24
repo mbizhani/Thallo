@@ -1,9 +1,9 @@
 package org.devocative.thallo.common;
 
-import org.devocative.thallo.common.app.User;
-import org.devocative.thallo.common.app.UserDAO;
-import org.devocative.thallo.common.app.UserLog;
-import org.devocative.thallo.common.app.UserLogDAO;
+import org.devocative.thallo.common.app.model.User;
+import org.devocative.thallo.common.app.model.UserDAO;
+import org.devocative.thallo.common.app.model.UserLog;
+import org.devocative.thallo.common.app.model.UserLogDAO;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
