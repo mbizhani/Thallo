@@ -24,6 +24,8 @@
 		<module>thallo-common</module>
 		<module>thallo-starter-alog</module>
 
+		<module>thallo-test</module>
+
 		<module>thallo-cdc</module>
 		<module>thallo-starter-cdc-jpa</module>
 	</modules>

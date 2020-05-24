@@ -15,10 +15,16 @@ public class ConstraintViolationDTO {
 
 	// ------------------------------
 
-	public ConstraintViolationDTO(EConstraintViolationType type, String field, String message) {
+	public ConstraintViolationDTO(EConstraintViolationType type, String field, String message, Criterion... criteria) {
 		this.type = type;
 		this.field = field;
 		this.message = message;
+
+		if (criteria != null) {
+			for (Criterion criterion : criteria) {
+				this.criteria.put(criterion.criterion, criterion.value);
+			}
+		}
 	}
 
 	public EConstraintViolationType getType() {
@@ -49,7 +55,8 @@ public class ConstraintViolationDTO {
 		ConstraintViolationDTO that = (ConstraintViolationDTO) o;
 		return type == that.type &&
 			Objects.equals(field, that.field) &&
-			(message == null || that.message == null || Objects.equals(message, that.message));
+			(message == null || that.message == null || Objects.equals(message, that.message)) &&
+			(criteria.isEmpty() || that.criteria.isEmpty() || Objects.equals(criteria, that.criteria));
 	}
 
 	@Override
@@ -64,12 +71,26 @@ public class ConstraintViolationDTO {
 
 	// ------------------------------
 
-	public static ConstraintViolationDTO of(EConstraintViolationType type, String field) {
-		return of(type, field, null);
+	public static ConstraintViolationDTO of(EConstraintViolationType type, String field, Criterion... criteria) {
+		return of(type, field, null, criteria);
 	}
 
-	public static ConstraintViolationDTO of(EConstraintViolationType type, String field, String message) {
-		return new ConstraintViolationDTO(type, field, message);
+	public static ConstraintViolationDTO of(EConstraintViolationType type, String field, String message, Criterion... criteria) {
+		return new ConstraintViolationDTO(type, field, message, criteria);
+	}
+
+	public static class Criterion {
+		private final String criterion;
+		private final Object value;
+
+		private Criterion(String criterion, Object value) {
+			this.criterion = criterion;
+			this.value = value;
+		}
+
+		public static Criterion of(String criterion, Object value) {
+			return new Criterion(criterion, value);
+		}
 	}
 
 }

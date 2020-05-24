@@ -1,6 +1,6 @@
-package org.devocative.thallo.common.app;
+package org.devocative.thallo.test.app;
 
-import org.devocative.thallo.common.app.dto.PersonDTO;
+import org.devocative.thallo.test.app.dto.PersonDTO;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.Valid;

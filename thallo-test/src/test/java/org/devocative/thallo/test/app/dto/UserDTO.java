@@ -1,4 +1,4 @@
-package org.devocative.thallo.common.app.dto;
+package org.devocative.thallo.test.app.dto;
 
 import lombok.Getter;
 import lombok.Setter;

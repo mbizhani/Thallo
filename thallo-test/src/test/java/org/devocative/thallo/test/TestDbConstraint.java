@@ -1,9 +1,9 @@
-package org.devocative.thallo.common;
+package org.devocative.thallo.test;
 
-import org.devocative.thallo.common.app.model.User;
-import org.devocative.thallo.common.app.model.UserDAO;
-import org.devocative.thallo.common.app.model.UserLog;
-import org.devocative.thallo.common.app.model.UserLogDAO;
+import org.devocative.thallo.test.app.model.User;
+import org.devocative.thallo.test.app.model.UserDAO;
+import org.devocative.thallo.test.app.model.UserLog;
+import org.devocative.thallo.test.app.model.UserLogDAO;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -17,7 +17,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.GenericContainer;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(Enclosed.class)
 public class TestDbConstraint {
@@ -37,31 +36,13 @@ public class TestDbConstraint {
 	protected void testUniqueConstraint() {
 		userDAO.saveAndFlush(new User().setUsername(USERNAME));
 
-		try {
-			userDAO.saveAndFlush(new User().setUsername(USERNAME));
-
-			fail("Expecting DataIntegrityViolationException");
-		} catch (RuntimeException e) {
-			final String constraint = ExceptionUtil
-				.findDbConstraintName(e)
-				.orElseThrow(() -> new RuntimeException("No Constraint Name"));
-
-			assertEquals(User.UC_OA_USER_USERNAME.toLowerCase(), constraint);
-		}
+		TAssert.assertDbConstraintViolation(User.UC_OA_USER_USERNAME,
+			() -> userDAO.saveAndFlush(new User().setUsername(USERNAME)));
 	}
 
 	protected void testRefConstraint() {
-		try {
-			userLogDAO.saveAndFlush(new UserLog().setUserId(1234L));
-
-			fail("Expecting DataIntegrityViolationException");
-		} catch (RuntimeException e) {
-			final String constraint = ExceptionUtil
-				.findDbConstraintName(e)
-				.orElseThrow(() -> new RuntimeException("No Constraint Name"));
-
-			assertEquals("fk_userlog2user", constraint);
-		}
+		TAssert.assertDbConstraintViolation("fk_userlog2user",
+			() -> userLogDAO.saveAndFlush(new UserLog().setUserId(1234L)));
 	}
 
 	protected final String getDialect() {

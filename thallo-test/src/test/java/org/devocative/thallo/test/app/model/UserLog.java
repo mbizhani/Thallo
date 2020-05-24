@@ -1,4 +1,4 @@
-package org.devocative.thallo.common.app.model;
+package org.devocative.thallo.test.app.model;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
