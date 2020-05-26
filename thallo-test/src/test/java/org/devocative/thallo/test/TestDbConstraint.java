@@ -4,6 +4,8 @@ import org.devocative.thallo.test.app.model.User;
 import org.devocative.thallo.test.app.model.UserDAO;
 import org.devocative.thallo.test.app.model.UserLog;
 import org.devocative.thallo.test.app.model.UserLogDAO;
+import org.devocative.thallo.test.init.InitRule;
+import org.devocative.thallo.test.init.db.EDbType;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -93,14 +95,14 @@ public class TestDbConstraint {
 		// TIP: failed testRefConstraint
 	}
 
-	/*@RunWith(SpringRunner.class)
+	@RunWith(SpringRunner.class)
 	@SpringBootTest
 	@ActiveProfiles("Oracle")
 	public static class TestOracle extends TestDbConstraint {
-		@BeforeClass
-		public static void init() {
-			System.clearProperty("spring.datasource.url");
-		}
+
+		@ClassRule
+		public static InitRule initRule = new InitRule()
+			.enableInMemoryOrRDBMS(EDbType.Oracle);
 
 		@Test
 		@Override
@@ -114,7 +116,7 @@ public class TestDbConstraint {
 		public void testRefConstraint() {
 			super.testRefConstraint();
 		}
-	}*/
+	}
 
 	@RunWith(SpringRunner.class)
 	@SpringBootTest
@@ -122,7 +124,7 @@ public class TestDbConstraint {
 	public static class TestPostgres extends TestDbConstraint {
 
 		@ClassRule
-		public static GenericContainer DB_CONTAINER = new GenericContainer("postgres:12.2")
+		public static GenericContainer<?> DB_CONTAINER = new GenericContainer<>("postgres:12.2")
 			.withExposedPorts(5432)
 			.withEnv("POSTGRES_PASSWORD", "postgres");
 
@@ -151,7 +153,7 @@ public class TestDbConstraint {
 	public static class TestMysql8 extends TestDbConstraint {
 
 		@ClassRule
-		public static GenericContainer DB_CONTAINER = new GenericContainer("mysql:8.0.19")
+		public static GenericContainer<?> DB_CONTAINER = new GenericContainer<>("mysql:8.0.19")
 			.withExposedPorts(3306)
 			.withCommand("--default-authentication-plugin=mysql_native_password")
 			.withEnv("MYSQL_ROOT_PASSWORD", "root")
@@ -176,7 +178,7 @@ public class TestDbConstraint {
 
 	// ------------------------------
 
-	private static void setDbParams(String url, int port, GenericContainer container) {
+	private static void setDbParams(String url, int port, GenericContainer<?> container) {
 		System.setProperty("spring.datasource.url", String.format(url, container.getMappedPort(port)));
 	}
 }

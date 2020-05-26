@@ -13,7 +13,7 @@ public class OracleDatabaseResource extends AbstractDatabaseResource {
 	protected String initDB(String server, String username, String password) {
 		final String url = String.format("jdbc:oracle:thin:@%s:1521/orclpdb1.localdomain", server);
 
-		sqlExec = new SqlExec("oracle.jdbc.OracleDriver", url, "sys as sysdba", "Oradoc_db1");
+		sqlExec = new SqlExec(getDbType().getDriverClass(), url, "sys as sysdba", "Oradoc_db1");
 		sqlExec.executeUpdate(String.format("create user %s identified by \"%s\"", username, password));
 
 		for (String sysGrant : SYS_GRANTS) {

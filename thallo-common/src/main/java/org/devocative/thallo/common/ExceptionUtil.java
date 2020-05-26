@@ -50,7 +50,7 @@ public class ExceptionUtil {
 			.collect(Collectors.toList());
 	}
 
-	public static ConstraintViolationDTO convertFrom(ConstraintViolation violation) {
+	public static ConstraintViolationDTO convertFrom(ConstraintViolation<?> violation) {
 		final EConstraintViolationType type = EConstraintViolationType.findByConstraint(violation
 			.getConstraintDescriptor()
 			.getAnnotation()
@@ -66,7 +66,7 @@ public class ExceptionUtil {
 
 		final ConstraintViolationDTO dto = new ConstraintViolationDTO(type, field, message);
 		if (type.getCriteria() != null) {
-			final Map attributes = violation.getConstraintDescriptor().getAttributes();
+			final Map<String, Object> attributes = violation.getConstraintDescriptor().getAttributes();
 			for (String criterion : type.getCriteria()) {
 				if (attributes.containsKey(criterion)) {
 					dto.addCriterion(criterion, attributes.get(criterion));

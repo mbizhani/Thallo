@@ -34,12 +34,16 @@ spring:
   profiles: Oracle
   datasource:
     url: jdbc:oracle:thin:@localhost:1521/orclpdb1.localdomain
-    username: tst_constraint
-    password: tst_constraint
+    username: test
+    password: test
   jpa:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.Oracle12cDialect
+  liquibase:
+    database-change-log-table: Z_LIQ_CHANGELOG
+    database-change-log-lock-table: Z_LIQ_CHANGELOG_LOCK
+    change-log: classpath:db/liq-oracle.xml
 
 ---
 

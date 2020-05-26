@@ -13,11 +13,25 @@ public abstract class AbstractDatabaseResource extends AbstractResource {
 
 	private final EDbType dbType;
 
+	// ------------------------------
+
 	protected AbstractDatabaseResource(EDbType dbType) {
 		this.dbType = dbType;
 	}
 
+	// ------------------------------
+
 	protected abstract String initDB(String server, String username, String password);
+
+	protected final EDbType getDbType() {
+		return dbType;
+	}
+
+	protected String getDialect() {
+		return dbType.getDialect();
+	}
+
+	// ------------------------------
 
 	@Override
 	public final Map<String, String> start() {
@@ -29,8 +43,8 @@ public abstract class AbstractDatabaseResource extends AbstractResource {
 			.put("spring.datasource.url", jdbcUrl)
 			.put("spring.datasource.username", username)
 			.put("spring.datasource.password", username)
-			//.put("spring.jpa.hibernate.ddl-auto", "")
-			.put("spring.jpa.properties.hibernate.dialect", dbType.getDialect())
+			.put("spring.jpa.hibernate.ddl-auto", "validate")
+			.put("spring.jpa.properties.hibernate.dialect", getDialect())
 			.put("spring.jpa.open-in-view", "false")
 			.get();
 	}

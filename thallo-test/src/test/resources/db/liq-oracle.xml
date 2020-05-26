@@ -1,0 +1,49 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+				   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+				   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+
+	<changeSet author="Mehdi Bizhani" id="1590487127332-1">
+		<createTable tableName="t_user">
+			<column autoIncrement="true" name="id" type="NUMBER(19, 0)">
+				<constraints primaryKey="true" primaryKeyName="t_userPK"/>
+			</column>
+			<column name="n_big_decimal" type="NUMBER(19, 2)"/>
+			<column name="n_byte" type="NUMBER(3, 0)"/>
+			<column name="b_lob" type="BLOB"/>
+			<column name="c_lob" type="CLOB"/>
+			<column name="d_birth_date" type="date"/>
+			<column name="n_double" type="FLOAT(24)"/>
+			<column name="n_float" type="FLOAT"/>
+			<column name="n_int" type="NUMBER(10, 0)"/>
+			<column name="d_time" type="date"/>
+			<column name="d_timestamp" type="TIMESTAMP"/>
+			<column name="c_username" type="VARCHAR2(255 CHAR)"/>
+		</createTable>
+	</changeSet>
+
+	<changeSet author="Mehdi Bizhani" id="1590487127332-2">
+		<createTable tableName="t_user_log">
+			<column autoIncrement="true" name="id" type="NUMBER(19, 0)">
+				<constraints primaryKey="true" primaryKeyName="t_user_logPK"/>
+			</column>
+			<column name="c_desc" type="VARCHAR2(255 CHAR)"/>
+			<column name="f_user" type="NUMBER(19, 0)">
+				<constraints nullable="false"/>
+			</column>
+		</createTable>
+	</changeSet>
+
+	<changeSet author="Mehdi Bizhani" id="1590487127332-3">
+		<addUniqueConstraint columnNames="c_username" constraintName="uc_oaUser_username_index" tableName="t_user"/>
+	</changeSet>
+
+	<changeSet author="Mehdi Bizhani" id="1590487127332-4">
+		<addForeignKeyConstraint baseColumnNames="f_user" baseTableName="t_user_log" constraintName="fk_userLog2user"
+								 deferrable="false" initiallyDeferred="false" referencedColumnNames="id"
+								 referencedTableName="t_user" validate="true"/>
+	</changeSet>
+
+</databaseChangeLog>
