@@ -35,28 +35,31 @@ public class User {
 	@Column(name = "n_int")
 	private Integer intValue;
 
-	@Column(name = "n_float")
-	private Float floatValue;
+//	@Column(name = "n_float")
+//	private Float floatValue;
 
-	@Column(name = "n_double")
-	private Double doubleValue;
+//	@Column(name = "n_double")
+//	private Double doubleValue;
 
 	@Column(name = "n_big_decimal")
 	private BigDecimal bigDecimal;
 
 	// --------------- DATE
 
-	@Temporal(TemporalType.DATE)
-	@Column(name = "d_birth_date")
-	private Date date;
+	@Column(name = "d_simple_date")
+	private Date simpleDate;
+
+//	@Temporal(TemporalType.DATE)
+//	@Column(name = "d_date")
+//	private Date date;
 
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "d_timestamp")
 	private Date timestamp;
 
-	@Temporal(TemporalType.TIME)
-	@Column(name = "d_time")
-	private Date time;
+//	@Temporal(TemporalType.TIME)
+//	@Column(name = "d_time")
+//	private Date time;
 
 	// --------------- LOB
 

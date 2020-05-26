@@ -19,6 +19,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.GenericContainer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Enclosed.class)
 public class TestDbConstraint {
@@ -107,7 +108,8 @@ public class TestDbConstraint {
 		@Test
 		@Override
 		public void testUniqueConstraint() {
-			assertEquals("org.hibernate.dialect.Oracle12cDialect", getDialect());
+			assertTrue("org.hibernate.dialect.Oracle12cDialect".equals(getDialect()) ||
+				"org.devocative.thallo.test.init.dialect.HSQL4Oracle".equals(getDialect()));
 			super.testUniqueConstraint();
 		}
 

@@ -38,8 +38,8 @@ public class DatabaseSelectorResource extends AbstractDatabaseResource {
 			log.error("DatabaseSelector: Main DB Problem", e);
 		}
 
-		dialect = EDbType.HSQLDB.getDialect();
-		final HSQLResource hsql = new HSQLResource(getDbType());
+		dialect = getDbType().getHsqlEqvDialect();
+		final InMemoryDB hsql = new InMemoryDB(getDbType());
 		return hsql.initDB(server, username, password);
 	}
 
