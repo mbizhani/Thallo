@@ -12,15 +12,15 @@
 			</column>
 			<column name="c_username" type="VARCHAR2(255 CHAR)"/>
 			<column name="n_byte" type="NUMBER(3, 0)"/>
-			<!--<column name="n_float" type="FLOAT"/>-->
+			<column name="n_float" type="FLOAT"/>
 			<column name="n_int" type="NUMBER(10, 0)"/>
 			<!--<column name="n_double" type="FLOAT(24)"/>-->
 			<column name="n_big_decimal" type="NUMBER(19, 2)"/>
 			<column name="b_lob" type="BLOB"/>
 			<column name="c_lob" type="CLOB"/>
 			<column name="d_simple_date" type="date"/>
-			<!--<column name="d_date" type="date"/>-->
-			<!--<column name="d_time" type="date"/>-->
+			<column name="d_date" type="date"/>
+			<column name="d_time" type="date"/>
 			<column name="d_timestamp" type="TIMESTAMP"/>
 		</createTable>
 	</changeSet>

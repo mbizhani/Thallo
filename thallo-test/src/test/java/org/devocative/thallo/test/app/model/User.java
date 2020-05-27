@@ -35,8 +35,8 @@ public class User {
 	@Column(name = "n_int")
 	private Integer intValue;
 
-//	@Column(name = "n_float")
-//	private Float floatValue;
+	@Column(name = "n_float")
+	private Float floatValue;
 
 //	@Column(name = "n_double")
 //	private Double doubleValue;
@@ -49,17 +49,17 @@ public class User {
 	@Column(name = "d_simple_date")
 	private Date simpleDate;
 
-//	@Temporal(TemporalType.DATE)
-//	@Column(name = "d_date")
-//	private Date date;
+	@Temporal(TemporalType.DATE)
+	@Column(name = "d_date")
+	private Date date;
 
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "d_timestamp")
 	private Date timestamp;
 
-//	@Temporal(TemporalType.TIME)
-//	@Column(name = "d_time")
-//	private Date time;
+	@Temporal(TemporalType.TIME)
+	@Column(name = "d_time")
+	private Date time;
 
 	// --------------- LOB
 

@@ -1,64 +1,49 @@
 package org.devocative.thallo.test.init.db;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 
 public class DatabaseSelectorResource extends AbstractDatabaseResource {
-	private static final Logger log = LoggerFactory.getLogger(DatabaseSelectorResource.class);
 
-	private String dialect;
-
-	// ------------------------------
-
-	public DatabaseSelectorResource(EDbType dbType) {
+	public DatabaseSelectorResource(IDbType dbType) {
 		super(dbType);
 	}
 
 	// ------------------------------
 
 	@Override
-	protected String initDB(String server, String username, String password) {
+	protected InitDbResult initDB(String username, String password) {
 		final AbstractDatabaseResource main;
 		try {
-			main = getDbType().getDbResourceClass().newInstance();
+			main = (AbstractDatabaseResource) Class.forName(dbConfig.getResource()).newInstance();
 		} catch (Exception e) {
-			throw new RuntimeException("DatabaseSelector: Can't Create Main DB Resource", e);
+			throw new RuntimeException("DatabaseSelector: Can't Create Main DB Resource Class", e);
 		}
 
 		try {
-			final String mainJdbcUrl = main.initDB(server, username, password);
-			if (checkDb(mainJdbcUrl, username, password)) {
-				dialect = getDbType().getDialect();
-				return mainJdbcUrl;
+			final InitDbResult mainInitDbResult = main.initDB(username, password);
+			if (checkDb(main.getDbConfig().getDriverClass(), mainInitDbResult.getJdbcUrl(), username, password)) {
+				return mainInitDbResult;
 			}
 		} catch (Exception e) {
 			log.error("DatabaseSelector: Main DB Problem", e);
 		}
 
-		dialect = getDbType().getHsqlEqvDialect();
-		final InMemoryDB hsql = new InMemoryDB(getDbType());
-		return hsql.initDB(server, username, password);
-	}
-
-	@Override
-	protected String getDialect() {
-		return dialect;
+		final InMemoryResource hsql = new InMemoryResource(main.getDbConfig().getCompatibilityParam());
+		return hsql.initDB(username, password);
 	}
 
 	// ------------------------------
 
-	private boolean checkDb(String url, String username, String password) {
+	private static boolean checkDb(String driverClass, String jdbcUrl, String username, String password) {
 		try {
-			Class.forName(getDbType().getDriverClass());
+			Class.forName(driverClass);
 		} catch (ClassNotFoundException e) {
 			log.error("DatabaseSelector: Can't Load Main DB Driver Class", e);
 			return false;
 		}
 
-		try (final Connection connection = DriverManager.getConnection(url, username, password)) {
+		try (final Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
 			log.info("DatabaseSelector: DB Connected - {}", connection.getMetaData().getDatabaseProductName());
 		} catch (Exception e) {
 			log.error("DatabaseSelector: Can't Get Connection", e);

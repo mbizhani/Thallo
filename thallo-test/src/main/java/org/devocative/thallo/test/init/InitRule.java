@@ -1,7 +1,7 @@
 package org.devocative.thallo.test.init;
 
 import org.devocative.thallo.test.init.db.DatabaseSelectorResource;
-import org.devocative.thallo.test.init.db.EDbType;
+import org.devocative.thallo.test.init.db.IDbType;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +21,8 @@ public class InitRule extends ExternalResource {
 		return this;
 	}
 
-	public InitRule enableInMemoryOrRDBMS(EDbType target) {
+	public InitRule enableInMemoryOrRDBMS(IDbType target) {
 		resources.add(new DatabaseSelectorResource(target));
-		return this;
-	}
-
-	public InitRule enableRDBMS(EDbType type) {
 		return this;
 	}
 

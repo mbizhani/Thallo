@@ -109,7 +109,7 @@ public class TestDbConstraint {
 		@Override
 		public void testUniqueConstraint() {
 			assertTrue("org.hibernate.dialect.Oracle12cDialect".equals(getDialect()) ||
-				"org.devocative.thallo.test.init.dialect.HSQL4Oracle".equals(getDialect()));
+				"org.hibernate.dialect.HSQLDialect".equals(getDialect()));
 			super.testUniqueConstraint();
 		}
 
