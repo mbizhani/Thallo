@@ -35,7 +35,7 @@ public abstract class AbstractDatabaseResource extends AbstractResource {
 
 	// ------------------------------
 
-	protected abstract InitDbResult initDB(String username, String password);
+	protected abstract InitDbResult initDB(String username, String password) throws Exception;
 
 	protected final DbConfig getDbConfig() {
 		return dbConfig;
@@ -44,8 +44,11 @@ public abstract class AbstractDatabaseResource extends AbstractResource {
 	// ------------------------------
 
 	@Override
-	public final Map<String, String> start() {
-		final String username = "tst_" + SDF.format(new Date());
+	public final Map<String, String> start() throws Exception {
+		final String username = String.format("%s%s_%s",
+			getConfig("general.user.prefix"),
+			getName(),
+			SDF.format(new Date()));
 
 		final InitDbResult initDbResult = initDB(username, username);
 

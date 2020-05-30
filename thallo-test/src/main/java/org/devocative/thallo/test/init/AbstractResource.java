@@ -30,15 +30,29 @@ public abstract class AbstractResource {
 		}
 	}
 
-	public abstract Map<String, String> start();
+	// ------------------------------
+
+	private String name;
+
+	// ------------------------------
+
+	public abstract Map<String, String> start() throws Exception;
 
 	public void stop() {
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	// ------------------------------
 
 	protected MapBuilder createMapBuilder() {
 		return new MapBuilder();
+	}
+
+	protected String getName() {
+		return name;
 	}
 
 	protected static String getConfig(String key) {

@@ -8,12 +8,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 @Slf4j
-public class SqlExec {
-	private final String url;
+public class SqlExec implements AutoCloseable {
 	private final Connection connection;
 
 	public SqlExec(String driverClass, String url, String username, String password) {
-		this.url = url;
 
 		try {
 			Class.forName(driverClass);
@@ -25,32 +23,14 @@ public class SqlExec {
 		}
 	}
 
-	public String getUrl() {
-		return url;
+	public int executeUpdate(String sql) throws SQLException {
+		final Statement statement = connection.createStatement();
+		return statement.executeUpdate(sql);
 	}
 
-	public Connection getConnection() {
-		return connection;
-	}
-
-	public int executeUpdate(String sql) {
-		try {
-			final Statement statement = connection.createStatement();
-			return statement.executeUpdate(sql);
-		} catch (SQLException e) {
-			log.error("SqlExec.executeUpdate", e);
-			throw new RuntimeException(e);
-		}
-	}
-
-	public void close() {
+	public void close() throws SQLException {
 		if (connection != null) {
-			try {
-				connection.close();
-			} catch (SQLException e) {
-				log.error("SqlExec.close", e);
-				throw new RuntimeException(e);
-			}
+			connection.close();
 		}
 	}
 }
