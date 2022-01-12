@@ -1,7 +1,7 @@
 package org.devocative.thallo.common;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import x.y.z.DummyExceptionGen;
 
 public class TestStackTraceProcessor {
@@ -10,13 +10,13 @@ public class TestStackTraceProcessor {
 	public void testStackTraceProcessor_withWarp() {
 		try {
 			method1(true);
-			Assert.fail("Expecting Exception");
+			Assertions.fail("Expecting Exception");
 		} catch (Exception e) {
 			final String filtered = StackTraceProcessor.filter(e, StackTraceProcessor.class);
 
 			System.out.println("filtered_withWarp = " + filtered);
 
-			Assert.assertEquals(
+			Assertions.assertEquals(
 				"org.devocative.thallo.common.Level2Exception: x.y.z.Level1Exception\n" +
 					"\tat org.devocative.thallo.common.TestStackTraceProcessor.method3(TestStackTraceProcessor.java:74)\n" +
 					"\tat org.devocative.thallo.common.TestStackTraceProcessor.method2(TestStackTraceProcessor.java:66)\n" +
@@ -37,13 +37,13 @@ public class TestStackTraceProcessor {
 	public void testStackTraceProcessor_withoutWarp() {
 		try {
 			method1(false);
-			Assert.fail("Expecting Exception");
+			Assertions.fail("Expecting Exception");
 		} catch (Exception e) {
 			final String filtered = StackTraceProcessor.filter(e, StackTraceProcessor.class);
 
 			System.out.println("filtered_withoutWarp = " + filtered);
 
-			Assert.assertEquals(
+			Assertions.assertEquals(
 				"x.y.z.Level1Exception\n" +
 					"\tat x.y.z.DummyExceptionGen.test5(DummyExceptionGen.java:25)\n" +
 					"\t...\n" +

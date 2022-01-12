@@ -5,24 +5,21 @@ import org.devocative.thallo.cdc.test.repo.BookRepository;
 import org.devocative.thallo.cdc.test.repo.PersonRepository;
 import org.devocative.thallo.cdc.test.repo.VBookRepository;
 import org.devocative.thallo.cdc.test.repo.VPersonRepository;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @DirtiesContext
 public class TestCDC {
@@ -42,7 +39,7 @@ public class TestCDC {
 
 	// ---------------
 
-	@ClassRule
+	@RegisterExtension
 	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true);
 
 	// ------------------------------

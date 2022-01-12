@@ -4,15 +4,13 @@ import org.devocative.thallo.cdc.test.model.Person;
 import org.devocative.thallo.cdc.test.model.VPerson;
 import org.devocative.thallo.cdc.test.repo.PersonRepository;
 import org.devocative.thallo.cdc.test.repo.VPersonRepository;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -21,9 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
 @DirtiesContext
 public class TestThreadedCDC {
@@ -36,7 +33,7 @@ public class TestThreadedCDC {
 
 	// ---------------
 
-	@ClassRule
+	@RegisterExtension
 	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true);
 
 	// ------------------------------

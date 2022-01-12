@@ -1,2 +1,3 @@
 # Thallo
-Add  more fun to Spring Boot
+
+Add more fun to Spring Boot
