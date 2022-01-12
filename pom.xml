@@ -28,6 +28,8 @@
 
 		<module>thallo-cdc</module>
 		<module>thallo-starter-cdc-jpa</module>
+
+		<module>thallo-starter-hlf</module>
 	</modules>
 
 	<properties>
