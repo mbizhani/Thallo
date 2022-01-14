@@ -77,32 +77,30 @@ public class HlfService implements IHlfService {
 	// ---------------
 
 	@Override
-	public String submit(String method, String... args) {
+	public byte[] submit(String method, String... args) {
 		return submit(properties.getChaincode(), method, args);
 	}
 
 	@Override
-	public String submit(String chaincode, String method, String... args) {
+	public byte[] submit(String chaincode, String method, String... args) {
 		final Contract contract = network.getContract(chaincode);
 		try {
-			final byte[] bytes = contract.submitTransaction(method, args);
-			return new String(bytes);
+			return contract.submitTransaction(method, args);
 		} catch (Exception e) {
 			throw new RuntimeException("Call Submit on Chaincode Error: ", e);
 		}
 	}
 
 	@Override
-	public String evaluate(String method, String... args) {
+	public byte[] evaluate(String method, String... args) {
 		return evaluate(properties.getChaincode(), method, args);
 	}
 
 	@Override
-	public String evaluate(String chaincode, String method, String... args) {
+	public byte[] evaluate(String chaincode, String method, String... args) {
 		final Contract contract = network.getContract(chaincode);
 		try {
-			final byte[] bytes = contract.evaluateTransaction(method, args);
-			return new String(bytes);
+			return contract.evaluateTransaction(method, args);
 		} catch (Exception e) {
 			throw new RuntimeException("Call Evaluate on Chaincode Error: ", e);
 		}

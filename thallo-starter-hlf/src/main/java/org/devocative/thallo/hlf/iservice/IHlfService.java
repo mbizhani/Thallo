@@ -1,11 +1,11 @@
 package org.devocative.thallo.hlf.iservice;
 
 public interface IHlfService {
-	String submit(String method, String... args);
+	byte[] submit(String method, String... args);
 
-	String submit(String chaincode, String method, String... args);
+	byte[] submit(String chaincode, String method, String... args);
 
-	String evaluate(String method, String... args);
+	byte[] evaluate(String method, String... args);
 
-	String evaluate(String chaincode, String method, String... args);
+	byte[] evaluate(String chaincode, String method, String... args);
 }

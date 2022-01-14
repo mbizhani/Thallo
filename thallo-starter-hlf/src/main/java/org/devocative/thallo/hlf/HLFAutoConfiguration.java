@@ -2,10 +2,10 @@ package org.devocative.thallo.hlf;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 
 @Slf4j
-@Component
-@ComponentScan("org.devocative.thallo.hlf")
+@Configuration
+@ComponentScan
 public class HLFAutoConfiguration {
 }
