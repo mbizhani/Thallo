@@ -10,6 +10,7 @@ import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -77,32 +78,30 @@ public class HlfService implements IHlfService {
 	// ---------------
 
 	@Override
-	public byte[] submit(String method, String... args) {
+	public byte[] submit(String method, String... args) throws Exception {
 		return submit(properties.getChaincode(), method, args);
 	}
 
 	@Override
-	public byte[] submit(String chaincode, String method, String... args) {
-		final Contract contract = network.getContract(chaincode);
-		try {
-			return contract.submitTransaction(method, args);
-		} catch (Exception e) {
-			throw new RuntimeException("Call Submit on Chaincode Error: ", e);
-		}
+	public byte[] submit(String chaincode, String method, String... args) throws Exception {
+		final Contract contract = network.getContract(getChaincode(chaincode));
+		return contract.submitTransaction(method, args != null ? args : new String[0]);
 	}
 
 	@Override
-	public byte[] evaluate(String method, String... args) {
+	public byte[] evaluate(String method, String... args) throws Exception {
 		return evaluate(properties.getChaincode(), method, args);
 	}
 
 	@Override
-	public byte[] evaluate(String chaincode, String method, String... args) {
-		final Contract contract = network.getContract(chaincode);
-		try {
-			return contract.evaluateTransaction(method, args);
-		} catch (Exception e) {
-			throw new RuntimeException("Call Evaluate on Chaincode Error: ", e);
-		}
+	public byte[] evaluate(String chaincode, String method, String... args) throws Exception {
+		final Contract contract = network.getContract(getChaincode(chaincode));
+		return contract.evaluateTransaction(method, args != null ? args : new String[0]);
+	}
+
+	// ------------------------------
+
+	private String getChaincode(String chaincode) {
+		return StringUtils.hasLength(chaincode) ? chaincode : properties.getChaincode();
 	}
 }

@@ -1,15 +1,16 @@
 package org.devocative.thallo.hlf.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.devocative.thallo.hlf.HlfClient;
+import org.devocative.thallo.hlf.Submit;
 import org.devocative.thallo.hlf.iservice.IHlfService;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 public class HlfClientMethodHandler implements InvocationHandler {
@@ -42,67 +43,56 @@ public class HlfClientMethodHandler implements InvocationHandler {
 	// ------------------------------
 
 	private Object callChaincode(Method method, Object[] args) {
-		final byte[] result;
-		if (args != null) {
-			final String[] chaincodeArgs = new String[args.length];
-			for (int i = 0; i < args.length; i++) {
-				chaincodeArgs[i] = args[i] != null ? args[i].toString() : "";
+		try {
+			final HlfClient hlfClient = clientInterfaceClass.getAnnotation(HlfClient.class);
+			final String chaincode = hlfClient.chaincode();
+
+			String[] chaincodeArgs = null;
+			if (args != null) {
+				chaincodeArgs = new String[args.length];
+				for (int i = 0; i < args.length; i++) {
+					chaincodeArgs[i] = args[i] != null ? args[i].toString() : "";
+				}
 			}
 
-			result = hlfService.evaluate(method.getName(), chaincodeArgs);
-		} else {
-			result = hlfService.evaluate(method.getName());
-		}
-
-		return processResult(method, result);
-	}
-
-	private Object processResult(Method method, byte[] result) {
-		final Type genericReturnType = method.getGenericReturnType();
-
-		if (genericReturnType instanceof ParameterizedType) {
-			final ParameterizedType paramType = (ParameterizedType) genericReturnType;
-			final TypeFactory typeFactory = objectMapper.getTypeFactory();
-
-			final JavaType[] argsJavaType = Arrays.stream(paramType.getActualTypeArguments())
-				.map(typeFactory::constructType)
-				.toArray(JavaType[]::new);
-
-			final JavaType javaType = typeFactory.constructParametricType(load(paramType.getRawType()), argsJavaType);
-			return deserialize(result, javaType);
-		} else {
-			final Class<?> returnClass = method.getReturnType();
-			if (byte[].class.equals(returnClass)) {
-				return result;
-			} else if (String.class.equals(returnClass)) {
-				return new String(result);
+			final byte[] result;
+			if (method.isAnnotationPresent(Submit.class)) {
+				result = hlfService.submit(chaincode, method.getName(), chaincodeArgs);
 			} else {
-				return deserialize(result, returnClass);
+				result = hlfService.evaluate(chaincode, method.getName(), chaincodeArgs);
 			}
+			return processResult(method, result);
+		} catch (Exception e) {
+			throw new RuntimeException(String.format("HlfClient: %s::%s(%s)",
+				clientInterfaceClass.getCanonicalName(), method.getName(), Arrays.toString(args)), e);
 		}
 	}
 
-	private Class<?> load(Type type) {
-		try {
-			return Class.forName(type.getTypeName());
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private Object deserialize(byte[] result, JavaType targetType) {
-		try {
-			return objectMapper.readValue(new String(result), targetType);
-		} catch (JsonProcessingException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private Object deserialize(byte[] result, Class<?> targetType) {
-		try {
-			return objectMapper.readValue(new String(result), targetType);
-		} catch (JsonProcessingException e) {
-			throw new RuntimeException(e);
+	private Object processResult(Method method, byte[] result) throws Exception {
+		final Class<?> returnClass = method.getReturnType();
+		if (byte[].class.equals(returnClass)) {
+			return result;
+		} else if (Void.TYPE.equals(returnClass)) {
+			return null;
+		} else if (String.class.equals(returnClass)) {
+			return new String(result);
+		} else if (Boolean.class.equals(returnClass)) {
+			return Boolean.valueOf(new String(result));
+		} else if (Integer.class.equals(returnClass)) {
+			return Integer.valueOf(new String(result));
+		} else if (Long.class.equals(returnClass)) {
+			return Long.valueOf(new String(result));
+		} else if (Float.class.equals(returnClass)) {
+			return Float.valueOf(new String(result));
+		} else if (Double.class.equals(returnClass)) {
+			return Double.valueOf(new String(result));
+		} else if (BigDecimal.class.equals(returnClass)) {
+			return new BigDecimal(new String(result));
+		} else {
+			final Type genericReturnType = method.getGenericReturnType();
+			final TypeFactory typeFactory = objectMapper.getTypeFactory();
+			final JavaType javaType = typeFactory.constructType(genericReturnType);
+			return objectMapper.readValue(new String(result), javaType);
 		}
 	}
 }
