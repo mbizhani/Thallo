@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 
 public class HlfClientMethodHandler implements InvocationHandler {
 	private final Class<?> clientInterfaceClass;
@@ -57,24 +58,26 @@ public class HlfClientMethodHandler implements InvocationHandler {
 	}
 
 	private Object processResult(Method method, byte[] result) {
+		final Type genericReturnType = method.getGenericReturnType();
 
-		if (method.getGenericReturnType() instanceof ParameterizedType) {
-			final ParameterizedType type = (ParameterizedType) method.getGenericReturnType();
-			final Class<?>[] params = new Class[type.getActualTypeArguments().length];
-			for (int i = 0; i < type.getActualTypeArguments().length; i++) {
-				params[i] = load(type.getActualTypeArguments()[i]);
-			}
+		if (genericReturnType instanceof ParameterizedType) {
+			final ParameterizedType paramType = (ParameterizedType) genericReturnType;
 			final TypeFactory typeFactory = objectMapper.getTypeFactory();
-			final JavaType javaType = typeFactory.constructParametricType(load(type.getRawType()), params);
+
+			final JavaType[] argsJavaType = Arrays.stream(paramType.getActualTypeArguments())
+				.map(typeFactory::constructType)
+				.toArray(JavaType[]::new);
+
+			final JavaType javaType = typeFactory.constructParametricType(load(paramType.getRawType()), argsJavaType);
 			return deserialize(result, javaType);
 		} else {
-			final Class<?> returnType = method.getReturnType();
-			if (byte[].class.equals(returnType)) {
+			final Class<?> returnClass = method.getReturnType();
+			if (byte[].class.equals(returnClass)) {
 				return result;
-			} else if (String.class.equals(returnType)) {
+			} else if (String.class.equals(returnClass)) {
 				return new String(result);
 			} else {
-				return deserialize(result, returnType);
+				return deserialize(result, returnClass);
 			}
 		}
 	}
