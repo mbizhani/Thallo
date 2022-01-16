@@ -3,9 +3,11 @@ package org.devocative.thallo.hlf.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.devocative.thallo.hlf.HlfProperties;
+import org.devocative.thallo.hlf.dto.HlfTransactionInfo;
 import org.devocative.thallo.hlf.iservice.IHlfService;
+import org.devocative.thallo.hlf.iservice.IHlfTransactionReader;
 import org.hyperledger.fabric.gateway.*;
-import org.hyperledger.fabric.sdk.Enrollment;
+import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
 import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
@@ -16,13 +18,18 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.hyperledger.fabric.sdk.BlockInfo.EnvelopeType.TRANSACTION_ENVELOPE;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class HlfService implements IHlfService {
 	private final HlfProperties properties;
+	private final List<? extends IHlfTransactionReader> transactionReaders;
 
 	private Gateway gateway;
 	private Network network;
@@ -46,8 +53,8 @@ public class HlfService implements IHlfService {
 				final EnrollmentRequest enrollmentRequestTLS = new EnrollmentRequest();
 				enrollmentRequestTLS.addHost("localhost");
 				enrollmentRequestTLS.setProfile("tls");
-				Enrollment enrollment = caClient.enroll(username, properties.getCaServer().getPassword(), enrollmentRequestTLS);
-				Identity user = Identities.newX509Identity(properties.getOrgMspId(), enrollment);
+				final Enrollment enrollment = caClient.enroll(username, properties.getCaServer().getPassword(), enrollmentRequestTLS);
+				final Identity user = Identities.newX509Identity(properties.getOrgMspId(), enrollment);
 				wallet.put(username, user);
 				log.info("Successfully enrolled user '{}' and imported it into the wallet", username);
 			} else {
@@ -65,6 +72,12 @@ public class HlfService implements IHlfService {
 			network = gateway.getNetwork(properties.getChannel());
 		} catch (Exception e) {
 			throw new RuntimeException("HLF Init Error", e);
+		}
+
+		try {
+			processBlocks();
+		} catch (Exception e) {
+			log.error("HLF Service: Process Blocks", e);
 		}
 	}
 
@@ -103,5 +116,67 @@ public class HlfService implements IHlfService {
 
 	private String getChaincode(String chaincode) {
 		return StringUtils.hasLength(chaincode) ? chaincode : properties.getChaincode();
+	}
+
+	private void processBlocks() throws Exception {
+		if (!transactionReaders.isEmpty()) {
+			log.info("HlfService: Transaction Reader(s) = {}", transactionReaders);
+
+			final Channel channel = network.getChannel();
+			final BlockchainInfo channelInfo = channel.queryBlockchainInfo();
+
+			for (long current = 0; current < channelInfo.getHeight(); current++) {
+				final BlockInfo blockInfo = channel.queryBlockByNumber(current);
+				final Long blockNumber = blockInfo.getBlockNumber();
+
+				for (BlockInfo.EnvelopeInfo envelopeInfo : blockInfo.getEnvelopeInfos()) {
+					processBlock(envelopeInfo, blockNumber);
+				}
+			}
+
+			final BlockListener blockListener = (BlockEvent event) -> {
+				log.info("HlfService: BlockListener Started");
+
+				for (BlockInfo.EnvelopeInfo envelopeInfo : event.getEnvelopeInfos()) {
+					final Long blockNumber = event.getBlockNumber();
+					processBlock(envelopeInfo, blockNumber);
+				}
+
+				log.info("HlfService: BlockListener Stopped");
+			};
+			channel.registerBlockListener(blockListener);
+		}
+	}
+
+	private void processBlock(BlockInfo.EnvelopeInfo envelopeInfo, Long blockNumber) {
+		if (envelopeInfo.getType() == TRANSACTION_ENVELOPE) {
+			final String transactionId = envelopeInfo.getTransactionID();
+			final Long timestamp = envelopeInfo.getTimestamp().getTime();
+
+			final BlockInfo.TransactionEnvelopeInfo transactionEnvelopeInfo = (BlockInfo.TransactionEnvelopeInfo) envelopeInfo;
+
+			for (BlockInfo.TransactionEnvelopeInfo.TransactionActionInfo transactionActionInfo : transactionEnvelopeInfo.getTransactionActionInfos()) {
+				final String methodName = new String(transactionActionInfo.getChaincodeInputArgs(0), UTF_8);
+				final String[] args = new String[transactionActionInfo.getChaincodeInputArgsCount() - 1];
+				for (int i = 1; i < transactionActionInfo.getChaincodeInputArgsCount(); i++) {
+					args[i - 1] = new String(transactionActionInfo.getChaincodeInputArgs(i), UTF_8);
+				}
+
+				final HlfTransactionInfo hlfBlockDTO = new HlfTransactionInfo(
+					blockNumber,
+					transactionId,
+					transactionActionInfo.getProposalResponseStatus(),
+					transactionActionInfo.getChaincodeIDName(),
+					methodName,
+					args,
+					new String(transactionActionInfo.getProposalResponsePayload(), UTF_8),
+					timestamp
+				);
+				log.info("TransactionInfo: {}", hlfBlockDTO);
+
+				transactionReaders.forEach(reader -> reader.handleTransaction(hlfBlockDTO));
+			}
+		}
+
 	}
 }
