@@ -1,7 +1,7 @@
 package org.devocative.thallo.hlf.iservice;
 
-import org.devocative.thallo.hlf.dto.HlfTransactionInfo;
+import org.devocative.thallo.hlf.service.HlfTransactionReaderHandler;
 
 public interface IHlfTransactionReader {
-	void handleTransaction(HlfTransactionInfo info);
+	void handleTransaction(HlfTransactionReaderHandler handler);
 }
