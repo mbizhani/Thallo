@@ -1,15 +1,15 @@
 package org.devocative.thallo.hlf.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.devocative.thallo.hlf.HlfProperties;
+import org.devocative.thallo.hlf.iservice.IHlfCAService;
 import org.devocative.thallo.hlf.iservice.IHlfService;
 import org.devocative.thallo.hlf.iservice.IHlfTransactionReader;
-import org.hyperledger.fabric.gateway.*;
-import org.hyperledger.fabric.sdk.Enrollment;
-import org.hyperledger.fabric.sdk.security.CryptoSuiteFactory;
-import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
-import org.hyperledger.fabric_ca.sdk.HFCAClient;
+import org.hyperledger.fabric.gateway.Contract;
+import org.hyperledger.fabric.gateway.Gateway;
+import org.hyperledger.fabric.gateway.Network;
+import org.hyperledger.fabric.gateway.Wallet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -19,13 +19,13 @@ import javax.annotation.PreDestroy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Properties;
 
-@Slf4j
-@RequiredArgsConstructor
 @Service
 public class HlfService implements IHlfService {
+	private static final Logger log = LoggerFactory.getLogger(HlfService.class);
+
 	private final HlfProperties properties;
+	private final IHlfCAService caService;
 	private final List<? extends IHlfTransactionReader> transactionReaders;
 	private final ThreadPoolTaskExecutor taskExecutor;
 
@@ -33,30 +33,20 @@ public class HlfService implements IHlfService {
 
 	// ------------------------------
 
+	public HlfService(HlfProperties properties, IHlfCAService caService, List<? extends IHlfTransactionReader> transactionReaders, ThreadPoolTaskExecutor taskExecutor) {
+		this.properties = properties;
+		this.caService = caService;
+		this.transactionReaders = transactionReaders;
+		this.taskExecutor = taskExecutor;
+	}
+
+	// ------------------------------
+
 	@PostConstruct
 	public void init() {
 		try {
-			final Properties props = new Properties();
-			props.put("pemFile", properties.getCaServer().getPemFile());
-			props.put("allowAllHostNames", "true");
-
-			final HFCAClient caClient = HFCAClient.createNewInstance(properties.getCaServer().getUrl(), props);
-			caClient.setCryptoSuite(CryptoSuiteFactory.getDefault().getCryptoSuite());
-
-			final Wallet wallet = Wallets.newFileSystemWallet(Paths.get(properties.getIdentityWalletDir()));
-
 			final String username = properties.getCaServer().getUsername();
-			if (wallet.get(username) == null) {
-				final EnrollmentRequest enrollmentRequestTLS = new EnrollmentRequest();
-				enrollmentRequestTLS.addHost("localhost");
-				enrollmentRequestTLS.setProfile("tls");
-				final Enrollment enrollment = caClient.enroll(username, properties.getCaServer().getPassword(), enrollmentRequestTLS);
-				final Identity user = Identities.newX509Identity(properties.getOrgMspId(), enrollment);
-				wallet.put(username, user);
-				log.info("Successfully enrolled user '{}' and imported it into the wallet", username);
-			} else {
-				log.info("An identity for the user '{}' already exists in the wallet", username);
-			}
+			final Wallet wallet = caService.enroll(username, properties.getCaServer().getPassword());
 
 			final Path networkConfigPath = Paths.get(properties.getConnectionProfileFile());
 
