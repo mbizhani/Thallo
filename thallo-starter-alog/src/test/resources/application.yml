@@ -6,7 +6,9 @@ devocative:
 ---
 
 spring:
-  profiles: no-service
+  config:
+    activate:
+      on-profile: no-service
 devocative:
   thallo:
     log:

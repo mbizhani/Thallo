@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("no-service")
-public class NoServiceTestLogIt {
+public class TestLogItNoService {
 
 	@Autowired
 	private ITestService testService;

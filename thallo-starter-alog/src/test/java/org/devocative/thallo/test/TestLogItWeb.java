@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class WebTestLogIt {
+public class TestLogItWeb {
 
 	@LocalServerPort
 	private Integer port;
 
-	private TestRestTemplate restTemplate = new TestRestTemplate();
-	private HttpHeaders headers = new HttpHeaders();
+	private final TestRestTemplate restTemplate = new TestRestTemplate();
+	private final HttpHeaders headers = new HttpHeaders();
 
 	@Autowired
 	private MethodLogProperties properties;
@@ -47,7 +47,7 @@ public class WebTestLogIt {
 		final Logger root = (Logger) LoggerFactory.getLogger("org.devocative.thallo");
 		root.addAppender(appender);
 
-		HttpEntity entity = new HttpEntity(headers);
+		HttpEntity<String> entity = new HttpEntity<>(headers);
 		final ResponseEntity<String> responseEntity = restTemplate.exchange(String.format("http://localhost:%s/ignore", port), HttpMethod.GET, entity, String.class);
 		assertEquals("[]", responseEntity.getBody());
 

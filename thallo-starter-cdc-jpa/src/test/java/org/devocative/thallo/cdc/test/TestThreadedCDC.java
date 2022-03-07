@@ -5,11 +5,10 @@ import org.devocative.thallo.cdc.test.model.VPerson;
 import org.devocative.thallo.cdc.test.repo.PersonRepository;
 import org.devocative.thallo.cdc.test.repo.VPersonRepository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
@@ -23,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @DirtiesContext
+@EmbeddedKafka
 public class TestThreadedCDC {
 
 	@Autowired
@@ -30,11 +30,6 @@ public class TestThreadedCDC {
 
 	@Autowired
 	private VPersonRepository vPersonRepository;
-
-	// ---------------
-
-	@RegisterExtension
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true);
 
 	// ------------------------------
 
@@ -54,14 +49,6 @@ public class TestThreadedCDC {
 				return null;
 			}).collect(Collectors.toList())
 		);
-
-		/*System.out.println("######### vPersonRepository.count() = " + vPersonRepository.count());
-
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}*/
 
 		assertEquals(MAX - 1, vPersonRepository.count());
 		final List<VPerson> name = vPersonRepository.findAll(Sort.by("name"));

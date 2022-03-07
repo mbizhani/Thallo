@@ -6,22 +6,23 @@ import org.devocative.thallo.cdc.test.repo.PersonRepository;
 import org.devocative.thallo.cdc.test.repo.VBookRepository;
 import org.devocative.thallo.cdc.test.repo.VPersonRepository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @DirtiesContext
+@EmbeddedKafka
 public class TestCDC {
 
 
@@ -36,11 +37,6 @@ public class TestCDC {
 
 	@Autowired
 	private VPersonRepository vPersonRepository;
-
-	// ---------------
-
-	@RegisterExtension
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true);
 
 	// ------------------------------
 
@@ -60,7 +56,7 @@ public class TestCDC {
 		book1.setPrice(new Price(new BigDecimal("100000.1"), "ASD"));
 		book1.setSize(EBookSize.Normal);
 		book1.setOwner(owner);
-		book1.setAuthors(Arrays.asList(author1));
+		book1.setAuthors(List.of(author1));
 		book1.setCreatedDate(new Date());
 		book1.setCreatedBy("guest");
 		bookRepository.saveAndFlush(book1);

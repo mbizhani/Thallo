@@ -5,19 +5,19 @@ import java.util.Set;
 
 public class StackTraceProcessor {
 
-	public static String filter(Throwable throwable, Class byClass) {
+	public static String filter(Throwable throwable, Class<?> byClass) {
 		return filter(throwable, findBasePackage(byClass));
 	}
 
-	public static String filter(Throwable throwable, String filter) {
+	public static String filter(Throwable throwable, String... filters) {
 		StringBuilder builder = new StringBuilder();
-		processStackTrace(true, throwable, builder, filter);
+		processStackTrace(true, throwable, builder, filters);
 		return builder.toString();
 	}
 
 	// ------------------------------
 
-	private static String findBasePackage(Class cls) {
+	private static String findBasePackage(Class<?> cls) {
 		String result = "";
 		final String[] split = cls.getName().split("\\.");
 		if (split.length == 2) {
@@ -28,7 +28,7 @@ public class StackTraceProcessor {
 		return result;
 	}
 
-	private static void processStackTrace(boolean isFirstLevel, Throwable th, StringBuilder writer, String filter) {
+	private static void processStackTrace(boolean isFirstLevel, Throwable th, StringBuilder writer, String... filters) {
 		if (!isFirstLevel) {
 			writer.append("Caused by: ");
 		}
@@ -41,13 +41,13 @@ public class StackTraceProcessor {
 				appendElement(elements[i], writer);
 			}
 			writer.append("\t...\n");
-			processStackTrace(false, th.getCause(), writer, filter);
+			processStackTrace(false, th.getCause(), writer, filters);
 		} else {
-			processStackTraceElements(elements, writer, filter);
+			processStackTraceElements(elements, writer, filters);
 		}
 	}
 
-	private static void processStackTraceElements(StackTraceElement[] elements, StringBuilder writer, String filter) {
+	private static void processStackTraceElements(StackTraceElement[] elements, StringBuilder writer, String... filters) {
 		appendElement(elements[0], writer);
 
 		Set<Integer> indexOfPrintedElements = new HashSet<>();
@@ -57,7 +57,7 @@ public class StackTraceProcessor {
 
 		for (int i = 1; i < elements.length; i++) {
 			final StackTraceElement element = elements[i];
-			if (element.toString().contains(filter)) {
+			if (isValid(element, filters)) {
 				if (skipped) {
 					writer.append("\t...\n");
 					skipped = false;
@@ -76,6 +76,16 @@ public class StackTraceProcessor {
 		if (skipped) {
 			writer.append("\t...\n");
 		}
+	}
+
+	private static boolean isValid(StackTraceElement ste, String... filters) {
+		String st = ste.toString();
+		for (String filter : filters) {
+			if (st.contains(filter)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static void appendElement(StackTraceElement element, StringBuilder writer) {
